@@ -15,7 +15,6 @@ module dmd.clone;
 import core.stdc.stdio;
 import dmd.aggregate;
 import dmd.arraytypes;
-import dmd.dclass;
 import dmd.declaration;
 import dmd.dscope;
 import dmd.dstruct;
@@ -33,7 +32,6 @@ import dmd.mtype;
 import dmd.opover;
 import dmd.semantic2;
 import dmd.statement;
-import dmd.target;
 import dmd.typesem;
 import dmd.tokens;
 
@@ -255,7 +253,7 @@ extern (C++) FuncDeclaration buildOpAssign(StructDeclaration sd, Scope* sc)
     }
 
     auto fparams = new Parameters();
-    fparams.push(new Parameter(STC.nodtor, sd.type, Id.p, null, null));
+    fparams.push(new Parameter(STC.nodtor, sd.type, Id.p, null));
     auto tf = new TypeFunction(fparams, sd.handleType(), 0, LINK.d, stc | STC.ref_);
     auto fop = new FuncDeclaration(declLoc, Loc.initial, Id.assign, stc, tf);
     fop.storage_class |= STC.inference;
@@ -504,7 +502,7 @@ extern (C++) FuncDeclaration buildXopEquals(StructDeclaration sd, Scope* sc)
                 /* const bool opEquals(ref const S s);
                  */
                 auto parameters = new Parameters();
-                parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, null, null, null));
+                parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, null, null));
                 tfeqptr = new TypeFunction(parameters, Type.tbool, 0, LINK.d);
                 tfeqptr.mod = MODFlags.const_;
                 tfeqptr = cast(TypeFunction)tfeqptr.typeSemantic(Loc.initial, &scx);
@@ -529,8 +527,8 @@ extern (C++) FuncDeclaration buildXopEquals(StructDeclaration sd, Scope* sc)
     Loc declLoc; // loc is unnecessary so __xopEquals is never called directly
     Loc loc; // loc is unnecessary so errors are gagged
     auto parameters = new Parameters();
-    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.p, null, null));
-    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.q, null, null));
+    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.p, null));
+    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.q, null));
     auto tf = new TypeFunction(parameters, Type.tbool, 0, LINK.d);
     Identifier id = Id.xopEquals;
     auto fop = new FuncDeclaration(declLoc, Loc.initial, id, STC.static_, tf);
@@ -574,7 +572,7 @@ extern (C++) FuncDeclaration buildXopCmp(StructDeclaration sd, Scope* sc)
                 /* const int opCmp(ref const S s);
                  */
                 auto parameters = new Parameters();
-                parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, null, null, null));
+                parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, null, null));
                 tfcmpptr = new TypeFunction(parameters, Type.tint32, 0, LINK.d);
                 tfcmpptr.mod = MODFlags.const_;
                 tfcmpptr = cast(TypeFunction)tfcmpptr.typeSemantic(Loc.initial, &scx);
@@ -649,8 +647,8 @@ extern (C++) FuncDeclaration buildXopCmp(StructDeclaration sd, Scope* sc)
     Loc declLoc; // loc is unnecessary so __xopCmp is never called directly
     Loc loc; // loc is unnecessary so errors are gagged
     auto parameters = new Parameters();
-    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.p, null, null));
-    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.q, null, null));
+    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.p, null));
+    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.q, null));
     auto tf = new TypeFunction(parameters, Type.tint32, 0, LINK.d);
     Identifier id = Id.xopCmp;
     auto fop = new FuncDeclaration(declLoc, Loc.initial, id, STC.static_, tf);
@@ -757,7 +755,7 @@ extern (C++) FuncDeclaration buildXtoHash(StructDeclaration sd, Scope* sc)
     Loc declLoc; // loc is unnecessary so __xtoHash is never called directly
     Loc loc; // internal code should have no loc to prevent coverage
     auto parameters = new Parameters();
-    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.p, null, null));
+    parameters.push(new Parameter(STC.ref_ | STC.const_, sd.type, Id.p, null));
     auto tf = new TypeFunction(parameters, Type.thash_t, 0, LINK.d, STC.nothrow_ | STC.trusted);
     Identifier id = Id.xtoHash;
     auto fop = new FuncDeclaration(declLoc, Loc.initial, id, STC.static_, tf);
@@ -771,11 +769,7 @@ extern (C++) FuncDeclaration buildXtoHash(StructDeclaration sd, Scope* sc)
     const(char)* code =
         "size_t h = 0;" ~
         "foreach (i, T; typeof(p.tupleof))" ~
-        // workaround https://issues.dlang.org/show_bug.cgi?id=17968
-        "    static if(is(T* : const(Object)*)) " ~
-        "        h = h * 33 + typeid(const(Object)).getHash(cast(const void*)&p.tupleof[i]);" ~
-        "    else " ~
-        "        h = h * 33 + typeid(T).getHash(cast(const void*)&p.tupleof[i]);" ~
+        "    h = h * 33 + typeid(T).getHash(cast(const void*)&p.tupleof[i]);" ~
         "return h;";
     fop.fbody = new CompileStatement(loc, new StringExp(loc, cast(char*)code));
     Scope* sc2 = sc.push();
@@ -802,7 +796,7 @@ extern (C++) FuncDeclaration buildXtoHash(StructDeclaration sd, Scope* sc)
  * Close similarity with StructDeclaration::buildPostBlit(),
  * and the ordering changes (runs backward instead of forwards).
  */
-extern (C++) DtorDeclaration buildDtor(AggregateDeclaration ad, Scope* sc)
+extern (C++) FuncDeclaration buildDtor(AggregateDeclaration ad, Scope* sc)
 {
     //printf("AggregateDeclaration::buildDtor() %s\n", ad.toChars());
     if (ad.isUnionDeclaration())
@@ -885,34 +879,6 @@ extern (C++) DtorDeclaration buildDtor(AggregateDeclaration ad, Scope* sc)
             e = Expression.combine(ex, e); // combine in reverse order
         }
 
-        /* extern(C++) destructors call into super to destruct the full hierarchy
-        */
-        ClassDeclaration cldec = ad.isClassDeclaration();
-        if (cldec && cldec.classKind == ClassKind.cpp && cldec.baseClass && cldec.baseClass.primaryDtor)
-        {
-            // WAIT BUT: do I need to run `cldec.baseClass.dtor` semantic? would it have been run before?
-            cldec.baseClass.dtor.functionSemantic();
-
-            stc = mergeFuncAttrs(stc, cldec.baseClass.primaryDtor);
-            if (!(stc & STC.disable))
-            {
-                // super.__xdtor()
-
-                Expression ex = new SuperExp(loc);
-
-                // This is a hack so we can call destructors on const/immutable objects.
-                // Do it as a type 'paint'.
-                ex = new CastExp(loc, ex, cldec.baseClass.type.mutableOf());
-                if (stc & STC.safe)
-                    stc = (stc & ~STC.safe) | STC.trusted;
-
-                ex = new DotVarExp(loc, ex, cldec.baseClass.primaryDtor, false);
-                ex = new CallExp(loc, ex);
-
-                e = Expression.combine(e, ex); // super dtor last
-            }
-        }
-
         /* Build our own "destructor" which executes e
          */
         if (e || (stc & STC.disable))
@@ -928,7 +894,7 @@ extern (C++) DtorDeclaration buildDtor(AggregateDeclaration ad, Scope* sc)
         }
     }
 
-    DtorDeclaration xdtor = null;
+    FuncDeclaration xdtor = null;
     switch (ad.dtors.dim)
     {
     case 0:
@@ -967,11 +933,6 @@ extern (C++) DtorDeclaration buildDtor(AggregateDeclaration ad, Scope* sc)
         break;
     }
 
-    ad.primaryDtor = xdtor;
-
-    if (xdtor && xdtor.linkage == LINK.cpp && !Target.twoDtorInVtable)
-        xdtor = buildWindowsCppDtor(ad, xdtor, sc);
-
     // Add an __xdtor alias to make the inclusive dtor accessible
     if (xdtor)
     {
@@ -982,111 +943,6 @@ extern (C++) DtorDeclaration buildDtor(AggregateDeclaration ad, Scope* sc)
     }
 
     return xdtor;
-}
-
-/**
- * build a shim function around the compound dtor that accepts an argument
- *  that is used to implement the deleting C++ destructor
- *
- * Params:
- *  ad = the aggregate that contains the destructor to wrap
- *  dtor = the destructor to wrap
- *  sc = the scope in which to analyze the new function
- *
- * Returns:
- *  the shim destructor, semantically analyzed and added to the class as a member
- */
-private DtorDeclaration buildWindowsCppDtor(AggregateDeclaration ad, DtorDeclaration dtor, Scope* sc)
-{
-    auto cldec = ad.isClassDeclaration();
-    if (!cldec || cldec.cppDtorVtblIndex == -1) // scalar deleting dtor not built for non-virtual dtors
-        return dtor;
-
-    // generate deleting C++ destructor corresponding to:
-    // void* C::~C(int del)
-    // {
-    //   this->~C();
-    //   // TODO: if (del) delete (char*)this;
-    //   return (void*) this;
-    // }
-    Parameter delparam = new Parameter(STC.undefined_, Type.tuns32, Identifier.idPool("del"), new IntegerExp(dtor.loc, 0, Type.tuns32), null);
-    Parameters* params = new Parameters;
-    params.push(delparam);
-    auto ftype = new TypeFunction(params, Type.tvoidptr, false, LINK.cpp, dtor.storage_class);
-    auto func = new DtorDeclaration(dtor.loc, dtor.loc, dtor.storage_class, Id.cppdtor);
-    func.type = ftype;
-    if (dtor.fbody)
-    {
-        const loc = dtor.loc;
-        auto stmts = new Statements;
-        auto call = new CallExp(loc, dtor, null);
-        call.directcall = true;
-        stmts.push(new ExpStatement(loc, call));
-        stmts.push(new ReturnStatement(loc, new CastExp(loc, new ThisExp(loc), Type.tvoidptr)));
-        func.fbody = new CompoundStatement(loc, stmts);
-        func.generated = true;
-    }
-
-    auto sc2 = sc.push();
-    sc2.stc &= ~STC.static_; // not a static destructor
-    sc2.linkage = LINK.cpp;
-
-    ad.members.push(func);
-    func.addMember(sc2, ad);
-    func.dsymbolSemantic(sc2);
-
-    sc2.pop();
-    return func;
-}
-
-/**
- * build a shim function around the compound dtor that translates
- *  a C++ destructor to a destructor with extern(D) calling convention
- *
- * Params:
- *  ad = the aggregate that contains the destructor to wrap
- *  sc = the scope in which to analyze the new function
- *
- * Returns:
- *  the shim destructor, semantically analyzed and added to the class as a member
- */
-DtorDeclaration buildExternDDtor(AggregateDeclaration ad, Scope* sc)
-{
-    auto dtor = ad.primaryDtor;
-    if (!dtor)
-        return null;
-
-    // ABI incompatible on all (?) x86 32-bit platforms
-    if (ad.classKind != ClassKind.cpp || global.params.is64bit)
-        return dtor;
-
-    // generate member function that adjusts calling convention
-    // (EAX used for 'this' instead of ECX on Windows/stack on others):
-    // extern(D) void __ticppdtor()
-    // {
-    //     Class.__dtor();
-    // }
-    auto ftype = new TypeFunction(null, Type.tvoid, false, LINK.d, dtor.storage_class);
-    auto func = new DtorDeclaration(dtor.loc, dtor.loc, dtor.storage_class, Id.ticppdtor);
-    func.type = ftype;
-
-    auto call = new CallExp(dtor.loc, dtor, null);
-    call.directcall = true;                   // non-virtual call Class.__dtor();
-    func.fbody = new ExpStatement(dtor.loc, call);
-    func.generated = true;
-    func.storage_class |= STC.inference;
-
-    auto sc2 = sc.push();
-    sc2.stc &= ~STC.static_; // not a static destructor
-    sc2.linkage = LINK.d;
-
-    ad.members.push(func);
-    func.addMember(sc2, ad);
-    func.dsymbolSemantic(sc2);
-    func.functionSemantic(); // to infer attributes
-
-    sc2.pop();
-    return func;
 }
 
 /******************************************

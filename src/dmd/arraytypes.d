@@ -35,7 +35,6 @@ alias BaseClasses = Array!(BaseClass*);
 alias ClassDeclarations = Array!(ClassDeclaration);
 alias Dsymbols = Array!(Dsymbol);
 alias Objects = Array!(RootObject);
-alias DtorDeclarations = Array!(DtorDeclaration);
 alias FuncDeclarations = Array!(FuncDeclaration);
 alias Parameters = Array!(Parameter);
 alias Initializers = Array!(Initializer);

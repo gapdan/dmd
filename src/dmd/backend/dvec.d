@@ -10,7 +10,7 @@
  * Source:      $(LINK2 https://github.com/dlang/dmd/blob/master/src/dmd/backend/dvec.d, backend/dvec.d)
  */
 
-module dmd.backend.dvec;
+module dvec;
 
 import core.stdc.stdio;
 import core.stdc.stdlib;

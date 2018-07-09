@@ -928,8 +928,7 @@ extern (C++) class ConditionalDeclaration : AttribDeclaration
 extern (C++) final class StaticIfDeclaration : ConditionalDeclaration
 {
     ScopeDsymbol scopesym;
-    private bool addisdone = false; // true if members have been added to scope
-    private bool onStack = false;   // true if a call to `include` is currently active
+    bool addisdone;
 
     extern (D) this(Condition condition, Dsymbols* decl, Dsymbols* elsedecl)
     {
@@ -951,10 +950,8 @@ extern (C++) final class StaticIfDeclaration : ConditionalDeclaration
     {
         //printf("StaticIfDeclaration::include(sc = %p) scope = %p\n", sc, scope);
 
-        if (errors || onStack)
+        if (errors)
             return null;
-        onStack = true;
-        scope(exit) onStack = false;
 
         if (condition.inc == 0)
         {
@@ -1042,7 +1039,6 @@ extern (C++) final class StaticForeachDeclaration : AttribDeclaration
      of the first call.  We need both `cached` and `cache`, because
      `null` is a valid value for `cache`.
      +/
-    bool onStack = false;
     bool cached = false;
     Dsymbols* cache = null;
 
@@ -1077,20 +1073,14 @@ extern (C++) final class StaticForeachDeclaration : AttribDeclaration
 
     override Dsymbols* include(Scope* sc)
     {
-        if (errors || onStack)
+        if (errors)
             return null;
+
         if (cached)
         {
-            assert(!onStack);
             return cache;
         }
-        onStack = true;
-        scope(exit) onStack = false;
-
-        if (_scope)
-        {
-            sfe.prepare(_scope); // lower static foreach aggregate
-        }
+        sfe.prepare(_scope); // lower static foreach aggregate
         if (!sfe.ready())
         {
             return null; // TODO: ok?
@@ -1263,7 +1253,6 @@ extern (C++) final class CompileDeclaration : AttribDeclaration
 
 /***********************************************************
  * User defined attributes look like:
- *      @foo(args, ...)
  *      @(args, ...)
  */
 extern (C++) final class UserAttributeDeclaration : AttribDeclaration

@@ -379,41 +379,39 @@ extern (C++, std)
 {
     struct pair(T1, T2)
     {
-        void swap(ref pair other);
+	void swap(ref pair other);
     }
 
     struct allocator(T)
     {
-        uint fooa() const;
-        uint foob();
+	uint fooa() const;
+	uint foob();
     }
 
     struct basic_string(T1, T2, T3)
     {
-        uint fooa();
+	uint fooa();
     }
 
     struct basic_istream(T1, T2)
     {
-        uint fooc();
+	uint fooc();
     }
 
     struct basic_ostream(T1, T2)
     {
-        uint food();
+	uint food();
     }
 
     struct basic_iostream(T1, T2)
     {
-        uint fooe();
+	uint fooe();
     }
 
     struct char_traits(T)
     {
-        uint foof();
+	uint foof();
     }
-
-    struct test18957 {}
 }
 
 version (linux)
@@ -515,13 +513,13 @@ version(Win64)
 extern (C++)
 struct T18888(T)
 {
-    void fun();
+	void fun();
 }
 
 extern (C++)
 struct S18888(alias arg = T18888)
 {
-    alias I = T18888!(arg!int);
+	alias I = T18888!(arg!int);
 }
 
 version(Posix)
@@ -564,16 +562,16 @@ version (Posix)
 version (Win32)
 {
     static assert(C18890.__dtor.mangleof == "??1C18890@@UAE@XZ");
-    static assert(C18890.__xdtor.mangleof == "??_GC18890@@UAEPAXI@Z");
-    static assert(C18890_2.__dtor.mangleof == "?__dtor@C18890_2@@UAEXXZ");
-    static assert(C18890_2.__xdtor.mangleof == "??_GC18890_2@@UAEPAXI@Z");
+    static assert(C18890.__xdtor.mangleof == "??1C18890@@UAE@XZ");
+    static assert(C18890_2.__dtor.mangleof == "?__dtor@C18890_2@@UAE@XZ");
+    static assert(C18890_2.__xdtor.mangleof == "??1C18890_2@@UAE@XZ");
 }
 version (Win64)
 {
     static assert(C18890.__dtor.mangleof == "??1C18890@@UEAA@XZ");
-    static assert(C18890.__xdtor.mangleof == "??_GC18890@@UEAAPEAXI@Z");
-    static assert(C18890_2.__dtor.mangleof == "?__dtor@C18890_2@@UEAAXXZ");
-    static assert(C18890_2.__xdtor.mangleof == "??_GC18890_2@@UEAAPEAXI@Z");
+    static assert(C18890.__xdtor.mangleof == "??1C18890@@UEAA@XZ");
+    static assert(C18890_2.__dtor.mangleof == "?__dtor@C18890_2@@UEAA@XZ");
+    static assert(C18890_2.__xdtor.mangleof == "??1C18890_2@@UEAA@XZ");
 }
 
 /**************************************/
@@ -597,12 +595,12 @@ version (Posix)
 version (Win32)
 {
     static assert(C18891.__dtor.mangleof == "??1C18891@@UAE@XZ");
-    static assert(C18891.__xdtor.mangleof == "??_GC18891@@UAEPAXI@Z");
+    static assert(C18891.__xdtor.mangleof == "??1C18891@@UAE@XZ");
 }
 version (Win64)
 {
     static assert(C18891.__dtor.mangleof == "??1C18891@@UEAA@XZ");
-    static assert(C18891.__xdtor.mangleof == "??_GC18891@@UEAAPEAXI@Z");
+    static assert(C18891.__xdtor.mangleof == "??1C18891@@UEAA@XZ");
 }
 
 /**************************************/
@@ -614,7 +612,7 @@ extern (C++) struct TestOperators
     int opBinary(string op)(int x);
     int opUnary(string op)();
     int opOpAssign(string op)(int x);
-    int opIndex(int x);
+    int opIndex(size_t x);
     bool opEquals(int x);
     int opCall(int, float);
     int opAssign(int);
@@ -622,37 +620,6 @@ extern (C++) struct TestOperators
 
 version (Posix)
 {
-    static assert(TestOperators.opUnary!"*".mangleof     == "_ZN13TestOperatorsdeEv");
-    static assert(TestOperators.opUnary!"++".mangleof    == "_ZN13TestOperatorsppEv");
-    static assert(TestOperators.opUnary!"--".mangleof    == "_ZN13TestOperatorsmmEv");
-    static assert(TestOperators.opUnary!"-".mangleof     == "_ZN13TestOperatorsngEv");
-    static assert(TestOperators.opUnary!"+".mangleof     == "_ZN13TestOperatorspsEv");
-    static assert(TestOperators.opUnary!"~".mangleof     == "_ZN13TestOperatorscoEv");
-    static assert(TestOperators.opBinary!">>".mangleof   == "_ZN13TestOperatorsrsEi");
-    static assert(TestOperators.opBinary!"<<".mangleof   == "_ZN13TestOperatorslsEi");
-    static assert(TestOperators.opBinary!"*".mangleof    == "_ZN13TestOperatorsmlEi");
-    static assert(TestOperators.opBinary!"-".mangleof    == "_ZN13TestOperatorsmiEi");
-    static assert(TestOperators.opBinary!"+".mangleof    == "_ZN13TestOperatorsplEi");
-    static assert(TestOperators.opBinary!"&".mangleof    == "_ZN13TestOperatorsanEi");
-    static assert(TestOperators.opBinary!"/".mangleof    == "_ZN13TestOperatorsdvEi");
-    static assert(TestOperators.opBinary!"%".mangleof    == "_ZN13TestOperatorsrmEi");
-    static assert(TestOperators.opBinary!"^".mangleof    == "_ZN13TestOperatorseoEi");
-    static assert(TestOperators.opBinary!"|".mangleof    == "_ZN13TestOperatorsorEi");
-    static assert(TestOperators.opOpAssign!"*".mangleof  == "_ZN13TestOperatorsmLEi");
-    static assert(TestOperators.opOpAssign!"+".mangleof  == "_ZN13TestOperatorspLEi");
-    static assert(TestOperators.opOpAssign!"-".mangleof  == "_ZN13TestOperatorsmIEi");
-    static assert(TestOperators.opOpAssign!"/".mangleof  == "_ZN13TestOperatorsdVEi");
-    static assert(TestOperators.opOpAssign!"%".mangleof  == "_ZN13TestOperatorsrMEi");
-    static assert(TestOperators.opOpAssign!">>".mangleof == "_ZN13TestOperatorsrSEi");
-    static assert(TestOperators.opOpAssign!"<<".mangleof == "_ZN13TestOperatorslSEi");
-    static assert(TestOperators.opOpAssign!"&".mangleof  == "_ZN13TestOperatorsaNEi");
-    static assert(TestOperators.opOpAssign!"|".mangleof  == "_ZN13TestOperatorsoREi");
-    static assert(TestOperators.opOpAssign!"^".mangleof  == "_ZN13TestOperatorseOEi");
-    static assert(TestOperators.opCast!int.mangleof      == "_ZN13TestOperatorscviEv");
-    static assert(TestOperators.opAssign.mangleof        == "_ZN13TestOperatorsaSEi");
-    static assert(TestOperators.opEquals.mangleof        == "_ZN13TestOperatorseqEi");
-    static assert(TestOperators.opIndex.mangleof         == "_ZN13TestOperatorsixEi");
-    static assert(TestOperators.opCall.mangleof          == "_ZN13TestOperatorsclEif");
 }
 version (Win32)
 {
@@ -685,7 +652,7 @@ version (Win32)
     static assert(TestOperators.opCast!int.mangleof      == "??BTestOperators@@QAEHXZ");
     static assert(TestOperators.opAssign.mangleof        == "??4TestOperators@@QAEHH@Z");
     static assert(TestOperators.opEquals.mangleof        == "??8TestOperators@@QAE_NH@Z");
-    static assert(TestOperators.opIndex.mangleof         == "??ATestOperators@@QAEHH@Z");
+    static assert(TestOperators.opIndex.mangleof         == "??ATestOperators@@QAEHI@Z");
     static assert(TestOperators.opCall.mangleof          == "??RTestOperators@@QAEHHM@Z");
 }
 version (Win64)
@@ -719,44 +686,6 @@ version (Win64)
     static assert(TestOperators.opCast!int.mangleof      == "??BTestOperators@@QEAAHXZ");
     static assert(TestOperators.opAssign.mangleof        == "??4TestOperators@@QEAAHH@Z");
     static assert(TestOperators.opEquals.mangleof        == "??8TestOperators@@QEAA_NH@Z");
-    static assert(TestOperators.opIndex.mangleof         == "??ATestOperators@@QEAAHH@Z");
+    static assert(TestOperators.opIndex.mangleof         == "??ATestOperators@@QEAAH_K@Z");
     static assert(TestOperators.opCall.mangleof          == "??RTestOperators@@QEAAHHM@Z");
 }
-
-extern(C++, Namespace18922)
-{
-    import cppmangle2;
-    void func18922(Struct18922) {}
-
-    version (Posix)
-        static assert(func18922.mangleof == "_ZN14Namespace189229func18922ENS_11Struct18922E");
-    else version(Windows)
-        static assert(func18922.mangleof == "?func18922@Namespace18922@@YAXUStruct18922@1@@Z");
-}
-
-/**************************************/
-// https://issues.dlang.org/show_bug.cgi?id=18957
-// extern(C++) doesn't mangle 'std' correctly on posix systems
-
-version (Posix)
-{
-    extern (C++) void test18957(ref const(std.test18957) t) {}
-
-    static assert(test18957.mangleof == "_Z9test18957RKNSt9test18957E");
-}
-
-/**************************************/
-// https://issues.dlang.org/show_bug.cgi?id=19043
-// Incorrect mangling for extern(C++) const template parameter on windows
-
-extern(C++) struct test19043(T) {}
-
-extern(C++) void test19043a(test19043!(const(char)) a) {}
-extern(C++) void test19043b(T)(T a) {}
-version(Windows)
-{
-    static assert(test19043a.mangleof == "?test19043a@@YAXU?$test19043@$$CBD@@@Z");
-    static assert(test19043b!(test19043!(const(char))).mangleof ==
-      "??$test19043b@U?$test19043@$$CBD@@@@YAXU?$test19043@$$CBD@@@Z");
-}
-

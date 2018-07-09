@@ -12,9 +12,6 @@
 
 #include <stdio.h> // for size_t
 
-extern "C"
-{
-
 #if __APPLE__ && __i386__
     /* size_t is 'unsigned long', which makes it mangle differently
      * than D's 'uint'
@@ -282,7 +279,5 @@ void mem_setnewfileline (void *,const char *,int);
 
 #endif /* MEM_DEBUG */
 #endif /* MEM_NONE  */
-
-}
 
 #endif /* MEM_H */

@@ -2,7 +2,7 @@
 
 /******************************************/
 
-static int[100][100] bigarray;
+static int bigarray[100][100];
 
 void test1()
 {

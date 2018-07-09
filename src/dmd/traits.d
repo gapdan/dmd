@@ -17,11 +17,9 @@ import core.stdc.string;
 
 import dmd.aggregate;
 import dmd.arraytypes;
-import dmd.attrib;
 import dmd.canthrow;
 import dmd.dclass;
 import dmd.declaration;
-import dmd.denum;
 import dmd.dscope;
 import dmd.dsymbol;
 import dmd.dsymbolsem;
@@ -426,8 +424,7 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
     if (e.ident != Id.compiles &&
         e.ident != Id.isSame &&
         e.ident != Id.identifier &&
-        e.ident != Id.getProtection &&
-        e.ident != Id.getAttributes)
+        e.ident != Id.getProtection)
     {
         if (!TemplateInstance.semanticTiargs(e.loc, sc, e.args, 1))
             return new ErrorExp();
@@ -513,8 +510,6 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
                 auto y = s.isDeclaration();
             static if (is(T == FuncDeclaration))
                 auto y = s.isFuncDeclaration();
-            static if (is(T == EnumMember))
-                auto y = s.isEnumMember();
 
             if (!y || !fp(y))
                 return False();
@@ -526,7 +521,6 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
     alias isDsymX = isX!Dsymbol;
     alias isDeclX = isX!Declaration;
     alias isFuncX = isX!FuncDeclaration;
-    alias isEnumMemX = isX!EnumMember;
 
     if (e.ident == Id.isArithmetic)
     {
@@ -640,7 +634,7 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
         if (dim != 1)
             return dimError(1);
 
-        return isDeclX(f => f.isDisabled());
+        return isFuncX(f => f.isDisabled());
     }
     if (e.ident == Id.isAbstractFunction)
     {
@@ -721,12 +715,8 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
         Identifier id;
         if (auto po = isParameter(o))
         {
-            if (!po.ident)
-            {
-                e.error("argument `%s` has no identifier", po.type.toChars());
-                return new ErrorExp();
-            }
             id = po.ident;
+            assert(id);
         }
         else
         {
@@ -1019,7 +1009,6 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
                 ifd = sym.isInterfaceDeclaration();
             // If the symbol passed as a parameter is an
             // interface that inherits other interfaces
-            overloadApply(f, &dg);
             if (ifd && ifd.interfaces)
             {
                 // check the overloads of each inherited interface individually
@@ -1029,6 +1018,8 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
                         overloadApply(fd, &dg);
                 }
             }
+            else
+                overloadApply(f, &dg);
 
             auto tup = new TupleExp(e.loc, exps);
             return tup.expressionSemantic(scx);
@@ -1084,34 +1075,12 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
     }
     if (e.ident == Id.getAttributes)
     {
-        /* Specify 0 for bit 0 of the flags argument to semanticTiargs() so that
-         * a symbol should not be folded to a constant.
-         * Bit 1 means don't convert Parameter to Type if Parameter has an identifier
-         */
-        if (!TemplateInstance.semanticTiargs(e.loc, sc, e.args, 3))
-            return new ErrorExp();
-
         if (dim != 1)
             return dimError(1);
 
         auto o = (*e.args)[0];
-        auto po = isParameter(o);
         auto s = getDsymbolWithoutExpCtx(o);
-        UserAttributeDeclaration udad = null;
-        if (po)
-        {
-            udad = po.userAttribDecl;
-        }
-        else if (s)
-        {
-            if (s.isImport())
-            {
-                s = s.isImport().mod;
-            }
-            //printf("getAttributes %s, attrs = %p, scope = %p\n", s.toChars(), s.userAttribDecl, s.scope);
-            udad = s.userAttribDecl;
-        }
-        else
+        if (!s)
         {
             version (none)
             {
@@ -1125,7 +1094,13 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
             e.error("first argument is not a symbol");
             return new ErrorExp();
         }
+        if (auto imp = s.isImport())
+        {
+            s = imp.mod;
+        }
 
+        //printf("getAttributes %s, attrs = %p, scope = %p\n", s.toChars(), s.userAttribDecl, s.scope);
+        auto udad = s.userAttribDecl;
         auto exps = udad ? udad.getAttributes() : new Expressions();
         auto tup = new TupleExp(e.loc, exps);
         return tup.expressionSemantic(sc);
@@ -1174,7 +1149,7 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
             return new ErrorExp();
         }
 
-        bool value = Target.isReturnOnStack(tf, fd && fd.needThis());
+        bool value = Target.isReturnOnStack(tf);
         return new IntegerExp(e.loc, value, Type.tbool);
     }
     if (e.ident == Id.getFunctionVariadicStyle)
@@ -1336,15 +1311,15 @@ extern (C++) Expression semanticTraits(TraitsExp e, Scope* sc)
         {
             auto s = getDsymbol(o);
             Declaration d;
-            AggregateDeclaration agg;
-            if (!s || ((d = s.isDeclaration()) is null && (agg = s.isAggregateDeclaration()) is null))
+            ClassDeclaration c;
+            if (!s || ((d = s.isDeclaration()) is null && (c = s.isClassDeclaration()) is null))
             {
                 e.error("argument to `__traits(getLinkage, %s)` is not a declaration", o.toChars());
                 return new ErrorExp();
             }
             if (d !is null)
                 link = d.linkage;
-            else final switch (agg.classKind)
+            else final switch (c.classKind)
             {
                 case ClassKind.d:
                     link = LINK.d;

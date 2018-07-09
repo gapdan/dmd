@@ -202,10 +202,16 @@ extern (C++) void semanticTypeInfo(Scope* sc, Type t)
     t.accept(v);
 }
 
-enum StructFlags : int
+struct StructFlags
 {
-    none        = 0x0,
-    hasPointers = 0x1, // NB: should use noPointers as in ClassFlags
+    alias Type = uint;
+
+    enum Enum : int
+    {
+        hasPointers = 0x1, // NB: should use noPointers as in ClassFlags
+    }
+
+    alias hasPointers = Enum.hasPointers;
 }
 
 enum StructPOD : int

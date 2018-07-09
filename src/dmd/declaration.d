@@ -12,7 +12,6 @@
 
 module dmd.declaration;
 
-import core.stdc.stdio;
 import dmd.aggregate;
 import dmd.arraytypes;
 import dmd.ctorflow;
@@ -113,8 +112,7 @@ bool modifyFieldVar(Loc loc, Scope* sc, VarDeclaration var, Expression e1)
                         break;
                 }
                 assert(i < dim);
-                auto fieldInit = &sc.ctorflow.fieldinit[i];
-                const fi = fieldInit.csx;
+                const fi = sc.ctorflow.fieldinit[i];
 
                 if (fi & CSX.this_ctor)
                 {
@@ -129,14 +127,9 @@ bool modifyFieldVar(Loc loc, Scope* sc, VarDeclaration var, Expression e1)
                         // dmd.ctorflow.CSX enum.
                         // @@@DEPRECATED_2019-01@@@.
                         if (fi & CSX.deprecate_18719)
-                        {
-                            .deprecation(loc, "%s field `%s` was initialized in a previous constructor call", modStr, var.toChars());
-                        }
+                            .deprecation(loc, "%s field `%s` initialized multiple times", modStr, var.toChars());
                         else
-                        {
                             .error(loc, "%s field `%s` initialized multiple times", modStr, var.toChars());
-                            .errorSupplemental(fieldInit.loc, "Previous initialization is here.");
-                        }
                     }
                 }
                 else if (sc.inLoop || (fi & CSX.label))
@@ -150,8 +143,7 @@ bool modifyFieldVar(Loc loc, Scope* sc, VarDeclaration var, Expression e1)
                     }
                 }
 
-                fieldInit.csx |= CSX.this_ctor;
-                fieldInit.loc = e1.loc;
+                sc.ctorflow.fieldinit[i] |= CSX.this_ctor;
                 if (var.overlapped) // https://issues.dlang.org/show_bug.cgi?id=15258
                 {
                     foreach (j, v; ad.fields)
@@ -159,7 +151,7 @@ bool modifyFieldVar(Loc loc, Scope* sc, VarDeclaration var, Expression e1)
                         if (v is var || !var.isOverlappedWith(v))
                             continue;
                         v.ctorinit = true;
-                        sc.ctorflow.fieldinit[j].csx = CSX.this_ctor;
+                        sc.ctorflow.fieldinit[j] = CSX.this_ctor;
                     }
                 }
             }
@@ -348,7 +340,7 @@ extern (C++) abstract class Declaration : Dsymbol
                                     return false;
                         }
                     }
-                    error(loc, "cannot be used because it is annotated with `@disable`");
+                    error(loc, "is not callable because it is annotated with `@disable`");
                 }
             }
             return true;
@@ -561,7 +553,7 @@ extern (C++) final class TupleDeclaration : Declaration
     bool isexp;             // true: expression tuple
     TypeTuple tupletype;    // !=null if this is a type tuple
 
-    extern (D) this(const ref Loc loc, Identifier id, Objects* objects)
+    extern (D) this(Loc loc, Identifier id, Objects* objects)
     {
         super(id);
         this.loc = loc;
@@ -621,7 +613,7 @@ extern (C++) final class TupleDeclaration : Declaration
                 }
                 else
                 {
-                    auto arg = new Parameter(0, t, null, null, null);
+                    auto arg = new Parameter(0, t, null, null);
                 }
                 (*args)[i] = arg;
                 if (!t.deco)
@@ -692,7 +684,7 @@ extern (C++) final class AliasDeclaration : Declaration
     Dsymbol overnext;   // next in overload list
     Dsymbol _import;    // !=null if unresolved internal alias for selective import
 
-    extern (D) this(const ref Loc loc, Identifier id, Type type)
+    extern (D) this(Loc loc, Identifier id, Type type)
     {
         super(id);
         //printf("AliasDeclaration(id = '%s', type = %p)\n", id.toChars(), type);
@@ -702,7 +694,7 @@ extern (C++) final class AliasDeclaration : Declaration
         assert(type);
     }
 
-    extern (D) this(const ref Loc loc, Identifier id, Dsymbol s)
+    extern (D) this(Loc loc, Identifier id, Dsymbol s)
     {
         super(id);
         //printf("AliasDeclaration(id = '%s', s = %p)\n", id.toChars(), s);
@@ -1096,9 +1088,7 @@ extern (C++) class VarDeclaration : Declaration
     Expression edtor;               // if !=null, does the destruction of the variable
     IntRange* range;                // if !=null, the variable is known to be within the range
 
-    VarDeclarations* maybes;        // STC.maybescope variables that are assigned to this STC.maybescope variable
-
-    final extern (D) this(const ref Loc loc, Type type, Identifier id, Initializer _init, StorageClass storage_class = STC.undefined_)
+    final extern (D) this(Loc loc, Type type, Identifier id, Initializer _init, StorageClass storage_class = STC.undefined_)
     {
         super(id);
         //printf("VarDeclaration('%s')\n", id.toChars());
@@ -1642,23 +1632,6 @@ extern (C++) class VarDeclaration : Declaration
     {
         return sequenceNumber < v.sequenceNumber;
     }
-
-    /***************************************
-     * Add variable to maybes[].
-     * When a maybescope variable `v` is assigned to a maybescope variable `this`,
-     * we cannot determine if `this` is actually scope until the semantic
-     * analysis for the function is completed. Thus, we save the data
-     * until then.
-     * Params:
-     *  v = an STC.maybescope variable that was assigned to `this`
-     */
-    final void addMaybe(VarDeclaration v)
-    {
-        //printf("add %s to %s's list of dependencies\n", v.toChars(), toChars());
-        if (!maybes)
-            maybes = new VarDeclarations();
-        maybes.push(v);
-    }
 }
 
 /***********************************************************
@@ -1668,7 +1641,7 @@ extern (C++) final class SymbolDeclaration : Declaration
 {
     StructDeclaration dsym;
 
-    extern (D) this(const ref Loc loc, StructDeclaration dsym)
+    extern (D) this(Loc loc, StructDeclaration dsym)
     {
         super(dsym.ident);
         this.loc = loc;
@@ -2140,7 +2113,7 @@ extern (C++) final class TypeInfoVectorDeclaration : TypeInfoDeclaration
  */
 extern (C++) final class ThisDeclaration : VarDeclaration
 {
-    extern (D) this(const ref Loc loc, Type t)
+    extern (D) this(Loc loc, Type t)
     {
         super(loc, t, Id.This, null);
         storage_class |= STC.nodtor;

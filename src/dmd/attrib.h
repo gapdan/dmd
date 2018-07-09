@@ -178,7 +178,6 @@ class StaticIfDeclaration : public ConditionalDeclaration
 public:
     ScopeDsymbol *scopesym;
     bool addisdone;
-    bool onStack;
 
     Dsymbol *syntaxCopy(Dsymbol *s);
     Dsymbols *include(Scope *sc);

@@ -1330,7 +1330,7 @@ private extern (C++) class TypeInfoDtVisitor : Visitor
             dtb.size(0);
 
         // StructFlags m_flags;
-        StructFlags m_flags = StructFlags.none;
+        StructFlags.Type m_flags = 0;
         if (tc.hasPointers()) m_flags |= StructFlags.hasPointers;
         dtb.size(m_flags);
 
@@ -1345,7 +1345,7 @@ private extern (C++) class TypeInfoDtVisitor : Visitor
         }
 
         // xdtor
-        FuncDeclaration sdtor = sd.tidtor;
+        FuncDeclaration sdtor = sd.dtor;
         if (sdtor)
             dtb.xoff(toSymbol(sdtor), 0);
         else

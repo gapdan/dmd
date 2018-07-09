@@ -665,7 +665,7 @@ struct particle
     float yg;     /* Y Gravity       */
 }
 
-particle[10000] particles;
+particle particles[10000];
 
 void test32()
 {
@@ -1100,7 +1100,7 @@ body
 void test47()
 {
     real x = 3.1;
-    static real[] pp = [56.1, 32.7, 6];
+    static real pp[] = [56.1, 32.7, 6];
     real r;
 
     printf("The result should be %Lf\n",(56.1L + (32.7L + 6L * x) * x));

@@ -6597,7 +6597,7 @@ extern (C++) class TemplateInstance : ScopeDsymbol
                     Dsymbol s2 = s.getType().toDsymbol(sc);
                     if (!s2)
                     {
-                        .error(loc, "`%s` is not a valid template instance, because `%s` is not a template declaration but a type (`%s == %s`)", toChars(), id.toChars(), id.toChars(), s.getType.kind());
+                        error("`%s` is not a template declaration, it is a %s", id.toChars(), s.kind());
                         return false;
                     }
                     s = s2;
@@ -6684,7 +6684,7 @@ extern (C++) class TemplateInstance : ScopeDsymbol
                         for (size_t i = 0; i < dim; i++)
                         {
                             Parameter arg = (*tt.arguments)[i];
-                            if (flags & 2 && (arg.ident || arg.userAttribDecl))
+                            if (flags & 2 && arg.ident)
                                 tiargs.insert(j + i, arg);
                             else
                                 tiargs.insert(j + i, arg.type);
@@ -7296,9 +7296,7 @@ extern (C++) class TemplateInstance : ScopeDsymbol
                     if (isstatic)
                     {
                         Dsymbol dparent = sa.toParent2();
-                        if (!dparent)
-                            goto L1;
-                        else if (!enclosing)
+                        if (!enclosing)
                             enclosing = dparent;
                         else if (enclosing != dparent)
                         {

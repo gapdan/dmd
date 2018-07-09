@@ -667,7 +667,7 @@ extern (C++) class FuncDeclaration : Declaration
         {
             if (overnext)
                 return overnext.overloadInsert(ad);
-            if (!ad.aliassym && ad.type.ty != Tident && ad.type.ty != Tinstance && ad.type.ty != Ttypeof)
+            if (!ad.aliassym && ad.type.ty != Tident && ad.type.ty != Tinstance)
             {
                 //printf("\tad = '%s'\n", ad.type.toChars());
                 return false;
@@ -2170,7 +2170,7 @@ extern (C++) class FuncDeclaration : Declaration
             Parameter p = null;
             if (canBuildResultVar())
             {
-                p = new Parameter(STC.ref_ | STC.const_, f.nextOf(), Id.result, null, null);
+                p = new Parameter(STC.ref_ | STC.const_, f.nextOf(), Id.result, null);
                 fparams.push(p);
             }
             auto tf = new TypeFunction(fparams, Type.tvoid, 0, LINK.d);
@@ -2662,8 +2662,9 @@ extern (C++) FuncDeclaration resolveFuncCall(const ref Loc loc, Scope* sc, Dsymb
 
     Match m;
     m.last = MATCH.nomatch;
-    functionResolve(&m, s, loc, sc, tiargs, tthis, fargs, null);
-    auto orig_s = s;
+
+    const(char)* failMessage;
+    functionResolve(&m, s, loc, sc, tiargs, tthis, fargs, &failMessage);
 
     if (m.last > MATCH.nomatch && m.lastf)
     {
@@ -2790,9 +2791,6 @@ extern (C++) FuncDeclaration resolveFuncCall(const ref Loc loc, Scope* sc, Dsymb
                     .error(loc, "%s `%s%s%s` is not callable using argument types `%s`",
                         fd.kind(), fd.toPrettyChars(), parametersTypeToChars(tf.parameters, tf.varargs),
                         tf.modToChars(), fargsBuf.peekString());
-                    // re-resolve to check for supplemental message
-                    const(char)* failMessage;
-                    functionResolve(&m, orig_s, loc, sc, tiargs, tthis, fargs, &failMessage);
                     if (failMessage)
                         errorSupplemental(loc, failMessage);
                 }
@@ -3372,9 +3370,8 @@ extern (C++) final class DtorDeclaration : FuncDeclaration
 
     override bool isVirtual() const
     {
-        // D dtor's don't get put into the vtbl[]
-        // this is a hack so that extern(C++) destructors report as virtual, which are manually added to the vtable
-        return vtblIndex != -1;
+        // false so that dtor's don't get put into the vtbl[]
+        return false;
     }
 
     override bool addPreInvariant()

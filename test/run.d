@@ -68,7 +68,7 @@ Options:
         .predefinedTargets // preprocess
         .map!normalizeTestName
         .array
-        .filterTargets(env);
+        .filterTargets;
 
     if (targets.length > 0)
     {
@@ -85,7 +85,7 @@ Options:
                 log("%s=%s", key, value);
             log("================================================================================");
         }
-
+        
         int ret;
         auto taskPool = new TaskPool(jobs);
         scope(exit) taskPool.finish();
@@ -180,7 +180,7 @@ auto predefinedTargets(string[] targets)
 }
 
 // Removes targets that do not need updating (i.e. their .out file exists and is newer than the source file)
-auto filterTargets(string[] targets, string[string] env)
+auto filterTargets(string[] targets)
 {
     bool error;
     foreach (target; targets)
@@ -197,9 +197,8 @@ auto filterTargets(string[] targets, string[string] env)
     string[] targetsThatNeedUpdating;
     foreach (t; targets)
     {
-        auto resultRunTime = resultsDir.buildPath(t ~ ".out").timeLastModified.ifThrown(SysTime.init);
-        if (!force && resultRunTime > scriptDir.buildPath(t).timeLastModified &&
-                resultRunTime > env["DMD"].timeLastModified.ifThrown(SysTime.init))
+        if (!force && resultsDir.buildPath(t ~ ".out").timeLastModified.ifThrown(SysTime.init) >
+                scriptDir.buildPath(t).timeLastModified)
             writefln("%s is already up-to-date", t);
         else
             targetsThatNeedUpdating ~= t;

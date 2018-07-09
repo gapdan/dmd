@@ -1803,8 +1803,6 @@ class Lexer : ErrorHandler
         int d;
         bool err = false;
         bool overflow = false;
-        bool anyBinaryDigitsUS = false;
-        bool anyHexDigitsNoSingleUS = false;
         dchar c = *p;
         if (c == '0')
         {
@@ -1863,10 +1861,6 @@ class Lexer : ErrorHandler
             {
             case '0':
             case '1':
-                if (base == 2 && !anyBinaryDigitsUS)
-                    anyBinaryDigitsUS = true;
-                else if (base == 16 && !anyHexDigitsNoSingleUS)
-                    anyHexDigitsNoSingleUS = true;
                 ++p;
                 d = c - '0';
                 break;
@@ -1876,8 +1870,6 @@ class Lexer : ErrorHandler
             case '5':
             case '6':
             case '7':
-                if (base == 16 && !anyHexDigitsNoSingleUS)
-                    anyHexDigitsNoSingleUS = true;
                 if (base == 2 && !err)
                 {
                     error("binary digit expected");
@@ -1888,8 +1880,6 @@ class Lexer : ErrorHandler
                 break;
             case '8':
             case '9':
-                if (base == 16 && !anyHexDigitsNoSingleUS)
-                    anyHexDigitsNoSingleUS = true;
                 ++p;
                 if (base < 10 && !err)
                 {
@@ -1910,8 +1900,6 @@ class Lexer : ErrorHandler
             case 'D':
             case 'E':
             case 'F':
-                if (base == 16 && !anyHexDigitsNoSingleUS)
-                    anyHexDigitsNoSingleUS = true;
                 ++p;
                 if (base != 16)
                 {
@@ -1945,8 +1933,6 @@ class Lexer : ErrorHandler
                 p = start;
                 return inreal(t);
             case '_':
-                if (base == 2 && !anyBinaryDigitsUS)
-                    anyBinaryDigitsUS = true;
                 ++p;
                 continue;
             default:
@@ -1969,9 +1955,6 @@ class Lexer : ErrorHandler
             error("integer overflow");
             err = true;
         }
-        if ((base == 2 && !anyBinaryDigitsUS) ||
-            (base == 16 && !anyHexDigitsNoSingleUS))
-            deprecation("`%.*s` isn't a valid integer literal, use `%.*s0` instead", cast(int)(p - start), start, 2, start);
         enum FLAGS : int
         {
             none = 0,

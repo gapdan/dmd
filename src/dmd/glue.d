@@ -908,7 +908,7 @@ void FuncDeclaration_toObjFile(FuncDeclaration fd, bool multiobj)
 
     assert(fd.type.ty == Tfunction);
     TypeFunction tf = cast(TypeFunction)fd.type;
-    RET retmethod = retStyle(tf, fd.needThis());
+    RET retmethod = retStyle(tf);
     if (retmethod == RET.stack)
     {
         // If function returns a struct, put a pointer to that
@@ -917,15 +917,8 @@ void FuncDeclaration_toObjFile(FuncDeclaration fd, bool multiobj)
         char[5+4+1] hiddenparam = void;
         __gshared int hiddenparami;    // how many we've generated so far
 
-        const(char)* name;
-        if (fd.nrvo_can && fd.nrvo_var)
-            name = fd.nrvo_var.ident.toChars();
-        else
-        {
-            sprintf(hiddenparam.ptr, "__HID%d", ++hiddenparami);
-            name = hiddenparam.ptr;
-        }
-        shidden = symbol_name(name, SCparameter, thidden);
+        sprintf(hiddenparam.ptr,"__HID%d",++hiddenparami);
+        shidden = symbol_name(hiddenparam.ptr,SCparameter,thidden);
         shidden.Sflags |= SFLtrue | SFLfree;
         if (fd.nrvo_can && fd.nrvo_var && fd.nrvo_var.nestedrefs.dim)
             type_setcv(&shidden.Stype, shidden.Stype.Tty | mTYvolatile);
@@ -1161,7 +1154,7 @@ void FuncDeclaration_toObjFile(FuncDeclaration fd, bool multiobj)
         if (fd.isCtorDeclaration())
         {
             assert(sthis);
-            foreach (b; BlockRange(f.Fstartblock))
+            for (block *b = f.Fstartblock; b; b = b.Bnext)
             {
                 if (b.BC == BCret)
                 {
@@ -1514,7 +1507,7 @@ uint totym(Type tx)
                     if (global.params.isWindows)
                     {
                     }
-                    else if (!global.params.is64bit && retStyle(tf, false) == RET.stack)
+                    else if (!global.params.is64bit && retStyle(tf) == RET.stack)
                         t = TYhfunc;
                     break;
 

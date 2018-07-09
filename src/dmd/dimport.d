@@ -47,7 +47,7 @@ extern (C++) final class Import : Dsymbol
     // corresponding AliasDeclarations for alias=name pairs
     AliasDeclarations aliasdecls;
 
-    extern (D) this(const ref Loc loc, Identifiers* packages, Identifier id, Identifier aliasId, int isstatic)
+    extern (D) this(Loc loc, Identifiers* packages, Identifier id, Identifier aliasId, int isstatic)
     {
         super(null);
         assert(id);
@@ -120,16 +120,10 @@ extern (C++) final class Import : Dsymbol
         return si;
     }
 
-    /*******************************
-     * Load this module.
-     * Returns:
-     *  true for errors, false for success
-     */
-    bool load(Scope* sc)
+    void load(Scope* sc)
     {
         //printf("Import::load('%s') %p\n", toPrettyChars(), this);
         // See if existing module
-        const errors = global.errors;
         DsymbolTable dst = Package.resolve(packages, null, &pkg);
         version (none)
         {
@@ -137,7 +131,7 @@ extern (C++) final class Import : Dsymbol
             {
                 .error(loc, "can only import from a module, not from a member of module `%s`. Did you mean `import %s : %s`?", pkg.toChars(), pkg.toPrettyChars(), id.toChars());
                 mod = pkg.isModule(); // Error recovery - treat as import of that module
-                return true;
+                return;
             }
         }
         Dsymbol s = dst.lookup(id);
@@ -200,7 +194,6 @@ extern (C++) final class Import : Dsymbol
         if (!pkg)
             pkg = mod;
         //printf("-Import::load('%s'), pkg = %p\n", toChars(), pkg);
-        return global.errors != errors;
     }
 
     override void importAll(Scope* sc)

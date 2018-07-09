@@ -137,35 +137,24 @@ Symbol *toSymbol(Dsymbol s)
             //printf("VarDeclaration.toSymbol(%s)\n", vd.toChars());
             assert(!vd.needThis());
 
-            const(char)[] id;
-            import dmd.root.outbuffer : OutBuffer;
-            OutBuffer buf;
-            bool isNRVO = false;
+            Symbol *s;
             if (vd.isDataseg())
             {
+                import dmd.root.outbuffer : OutBuffer;
+                OutBuffer buf;
                 mangleToBuffer(vd, &buf);
-                id = buf.peekString()[0..buf.offset]; // symbol_calloc needs zero termination
+                const length = buf.offset;
+                const id = buf.peekString();
+                s = symbol_calloc(id, cast(uint)length);
             }
             else
             {
-                id = vd.ident.toString();
-                if (FuncDeclaration fd = vd.toParent2().isFuncDeclaration())
-                {
-                    if (fd.nrvo_can && fd.nrvo_var == vd)
-                    {
-                        buf.writestring("__nrvo_");
-                        buf.writestring(id);
-                        id = buf.peekString()[0..buf.offset]; // symbol_calloc needs zero termination
-                        isNRVO = true;
-                    }
-                }
+                const id = vd.ident.toChars();
+                s = symbol_calloc(id, cast(uint)strlen(id));
             }
-            Symbol *s = symbol_calloc(id.ptr, cast(uint)id.length);
             s.Salignment = vd.alignment;
             if (vd.storage_class & STC.temp)
                 s.Sflags |= SFLartifical;
-            if (isNRVO)
-                s.Sflags |= SFLnodebug;
 
             TYPE *t;
             if (vd.storage_class & (STC.out_ | STC.ref_))
@@ -560,7 +549,7 @@ Classsym *fake_classsym(Identifier id)
 
 Symbol *toVtblSymbol(ClassDeclaration cd)
 {
-    if (!cd.vtblsym || !cd.vtblsym.csym)
+    if (!cd.vtblsym)
     {
         if (!cd.csym)
             toSymbol(cd);
@@ -570,11 +559,9 @@ Symbol *toVtblSymbol(ClassDeclaration cd)
         auto s = toSymbolX(cd, "__vtbl", SCextern, t, "Z");
         s.Sflags |= SFLnodebug;
         s.Sfl = FLextern;
-
-        auto vtbl = cd.vtblSymbol();
-        vtbl.csym = s;
+        cd.vtblsym = s;
     }
-    return cd.vtblsym.csym;
+    return cd.vtblsym;
 }
 
 /**********************************

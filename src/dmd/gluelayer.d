@@ -98,10 +98,7 @@ else version (IN_GCC)
     }
 
     // stubs
-    extern(C++) abstract class ObjcGlue
-    {
-        static void initialize() {}
-    }
+    void objc_initSymbols() { }
 }
 else
     static assert(false, "Unsupported compiler backend");

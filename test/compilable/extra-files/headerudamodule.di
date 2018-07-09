@@ -5,4 +5,3 @@ struct UDA
 	int a;
 }
 void main();
-void foo(@(1) int bar, @UDA(2) string bebe);

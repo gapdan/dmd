@@ -36,49 +36,7 @@ import dmd.mtype;
 import dmd.statement;
 import dmd.target;
 import dmd.tokens;
-import dmd.typesem;
 import dmd.visitor;
-
-/********************************
- * If possible, convert array initializer to associative array initializer.
- *
- *  Params:
- *     ai = array initializer to be converted
- *
- *  Returns:
- *     The converted associative array initializer or ErrorExp if `ai`
- *     is not an associative array initializer.
- */
-Expression toAssocArrayLiteral(ArrayInitializer ai)
-{
-    Expression e;
-    //printf("ArrayInitializer::toAssocArrayInitializer()\n");
-    //static int i; if (++i == 2) assert(0);
-    const dim = ai.value.dim;
-    auto keys = new Expressions();
-    keys.setDim(dim);
-    auto values = new Expressions();
-    values.setDim(dim);
-    for (size_t i = 0; i < dim; i++)
-    {
-        e = ai.index[i];
-        if (!e)
-            goto Lno;
-        (*keys)[i] = e;
-        Initializer iz = ai.value[i];
-        if (!iz)
-            goto Lno;
-        e = iz.initializerToExpression();
-        if (!e)
-            goto Lno;
-        (*values)[i] = e;
-    }
-    e = new AssocArrayLiteralExp(ai.loc, keys, values);
-    return e;
-Lno:
-    error(ai.loc, "not an associative array initializer");
-    return new ErrorExp();
-}
 
 /***********************
  * Translate init to an `Expression` in order to infer the type.
@@ -197,11 +155,10 @@ private extern(C++) final class InitializerSemanticVisitor : Visitor
                     if (!s)
                     {
                         s = sd.search_correct(id);
-                        Loc initLoc = i.value[j].loc;
                         if (s)
-                            error(initLoc, "`%s` is not a member of `%s`, did you mean %s `%s`?", id.toChars(), sd.toChars(), s.kind(), s.toChars());
+                            error(i.loc, "`%s` is not a member of `%s`, did you mean %s `%s`?", id.toChars(), sd.toChars(), s.kind(), s.toChars());
                         else
-                            error(initLoc, "`%s` is not a member of `%s`", id.toChars(), sd.toChars());
+                            error(i.loc, "`%s` is not a member of `%s`", id.toChars(), sd.toChars());
                         result = new ErrorInitializer();
                         return;
                     }

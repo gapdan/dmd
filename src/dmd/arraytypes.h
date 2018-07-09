@@ -32,8 +32,6 @@ typedef Array<class Dsymbol *> Dsymbols;
 
 typedef Array<class RootObject *> Objects;
 
-typedef Array<class DtorDeclaration *> DtorDeclarations;
-
 typedef Array<class FuncDeclaration *> FuncDeclarations;
 
 typedef Array<class Parameter *> Parameters;

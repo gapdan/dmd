@@ -15,7 +15,8 @@ module dmd.backend.cdef;
 
 import dmd.backend.cc: Classsym, Symbol;
 import dmd.backend.el;
-import dmd.backend.dlist;
+
+import dmd.tk.dlist;
 
 extern (C++):
 @nogc:
@@ -32,8 +33,6 @@ version (SCPP)
 version (SPP)
     version = XVERSION;
 version (HTOD)
-    version = XVERSION;
-version (MARS)
     version = XVERSION;
 
 version (XVERSION)

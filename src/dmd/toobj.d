@@ -419,13 +419,13 @@ void toObjFile(Dsymbol ds, bool multiobj)
                  */
                 dtbv.size(0);
             }
-            cd.vtblsym.csym.Sdt = dtbv.finish();
-            cd.vtblsym.csym.Sclass = scclass;
-            cd.vtblsym.csym.Sfl = FLdata;
-            out_readonly(cd.vtblsym.csym);
-            outdata(cd.vtblsym.csym);
+            cd.vtblsym.Sdt = dtbv.finish();
+            cd.vtblsym.Sclass = scclass;
+            cd.vtblsym.Sfl = FLdata;
+            out_readonly(cd.vtblsym);
+            outdata(cd.vtblsym);
             if (cd.isExport())
-                objmod.export_symbol(cd.vtblsym.csym,0);
+                objmod.export_symbol(cd.vtblsym,0);
         }
 
         override void visit(InterfaceDeclaration id)
@@ -1264,7 +1264,7 @@ private void genClassInfoForClass(ClassDeclaration cd, Symbol* sinit)
     // vtbl[]
     dtb.size(cd.vtbl.dim);
     if (cd.vtbl.dim)
-        dtb.xoff(cd.vtblsym.csym, 0, TYnptr);
+        dtb.xoff(cd.vtblsym, 0, TYnptr);
     else
         dtb.size(0);
 
@@ -1282,8 +1282,8 @@ private void genClassInfoForClass(ClassDeclaration cd, Symbol* sinit)
         dtb.size(0);
 
     // destructor
-    if (cd.tidtor)
-        dtb.xoff(toSymbol(cd.tidtor), 0, TYnptr);
+    if (cd.dtor)
+        dtb.xoff(toSymbol(cd.dtor), 0, TYnptr);
     else
         dtb.size(0);
 
@@ -1294,7 +1294,7 @@ private void genClassInfoForClass(ClassDeclaration cd, Symbol* sinit)
         dtb.size(0);
 
     // flags
-    ClassFlags flags = ClassFlags.hasOffTi;
+    ClassFlags.Type flags = ClassFlags.hasOffTi;
     if (cd.isCOMclass()) flags |= ClassFlags.isCOMclass;
     if (cd.isCPPclass()) flags |= ClassFlags.isCPPclass;
     flags |= ClassFlags.hasGetMembers;
@@ -1519,7 +1519,7 @@ private void genClassInfoForInterface(InterfaceDeclaration id)
     dtb.size(0);
 
     // flags
-    ClassFlags flags = ClassFlags.hasOffTi | ClassFlags.hasTypeInfo;
+    ClassFlags.Type flags = ClassFlags.hasOffTi | ClassFlags.hasTypeInfo;
     if (id.isCOMinterface()) flags |= ClassFlags.isCOMclass;
     dtb.size(flags);
 

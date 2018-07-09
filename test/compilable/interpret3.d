@@ -4680,7 +4680,7 @@ static assert(bug6886());
 
 struct Block10198
 {
-    int[4][3] val;
+    int val[3][4];
 }
 
 int bug10198()
@@ -6431,7 +6431,7 @@ C73 test73 = func73();
 
 struct S74
 {
-    int[1] n;
+    int n[1];
     static S74 test(){ S74 ret = void; ret.n[0] = 0; return ret; }
 }
 
@@ -7266,7 +7266,7 @@ struct Matrix13827(T, uint N)
 {
     private static defaultMatrix()
     {
-        T[N] arr;
+        T arr[N];
         return arr;
     }
 

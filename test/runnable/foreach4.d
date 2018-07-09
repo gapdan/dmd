@@ -8,7 +8,7 @@ alias bool bit;
 
 class Foo
 {
-    uint[2] array;
+    uint array[2];
 
     int opApply(int delegate(ref uint) dg)
     {
@@ -679,7 +679,7 @@ void test22()
 
 class Foo23
 {
-    int[2] array;
+    int array[2];
 
     int opApply(int delegate(ref int) dg)
     {
@@ -790,7 +790,7 @@ void test25()
 
 struct Foo26
 {
-    uint[2] array;
+    uint array[2];
 
     int forward(int delegate(ref uint) dg)
     {

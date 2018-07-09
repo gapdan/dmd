@@ -7,7 +7,7 @@ import core.bitop;
 
 void test1()
 {
-    size_t[2] array;
+    size_t array[2];
     uint x;
 version (D_LP64)
     size_t bitToUse = 67;
@@ -94,7 +94,7 @@ void test4()
 
 void test5()
 {
-    size_t[2] array;
+    size_t array[2];
 
     array[0] = 2;
     array[1] = 0x100;

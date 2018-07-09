@@ -112,6 +112,6 @@ public :
 unittest
 {
     import dmd.globals : Loc;
-    Expression e = new TypeidExp(Loc.initial, null);
+    Expression e = new TypeidExp(Loc.init, null);
     assert(e.astTypeName == "TypeidExp");
 }

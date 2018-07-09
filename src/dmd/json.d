@@ -828,12 +828,12 @@ public:
     Params:
      modules = array of the "root modules"
     */
-    private void generateModules(Modules* modules)
+    private void generateModules(ref Modules modules)
     {
         arrayStart();
-        if (modules)
+        if (modules.dim == 0)
         {
-            foreach (m; *modules)
+            foreach (m; modules)
             {
                 if (global.params.verbose)
                     message("json gen %s", m.toChars());
@@ -1001,7 +1001,7 @@ public:
     }
 }
 
-extern (C++) void json_generate(OutBuffer* buf, Modules* modules)
+extern (C++) void json_generate(OutBuffer* buf, ref Modules modules)
 {
     scope ToJsonVisitor json = new ToJsonVisitor(buf);
     // write trailing newline

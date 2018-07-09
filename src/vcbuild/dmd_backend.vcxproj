@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -86,18 +86,23 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="..\dmd\backend\backconfig.c" />
+    <ClCompile Include="..\dmd\backend\compress.c" />
     <ClCompile Include="..\dmd\backend\cv8.c" />
+    <ClCompile Include="..\dmd\backend\gsroa.c" />
     <ClCompile Include="..\dmd\backend\pdata.c" />
     <ClCompile Include="..\dmd\backend\ph2.c" />
     <ClCompile Include="..\dmd\backend\util2.c" />
     <ClCompile Include="..\dmd\backend\varstats.c" />
     <ClCompile Include="..\dmd\backend\tk.c" />
     <ClCompile Include="..\dmd\backend\aa.c" />
+    <ClCompile Include="..\dmd\backend\bcomplex.c" />
     <ClCompile Include="..\dmd\backend\blockopt.c" />
     <ClCompile Include="..\dmd\backend\cg.c" />
     <ClCompile Include="..\dmd\backend\cg87.c" />
     <ClCompile Include="..\dmd\backend\cgcod.c" />
+    <ClCompile Include="..\dmd\backend\cgcs.c" />
     <ClCompile Include="..\dmd\backend\cgcv.c" />
+    <ClCompile Include="..\dmd\backend\cgelem.c" />
     <ClCompile Include="..\dmd\backend\cgen.c" />
     <ClCompile Include="..\dmd\backend\cgobj.c" />
     <ClCompile Include="..\dmd\backend\cgreg.c" />
@@ -107,13 +112,22 @@
     <ClCompile Include="..\dmd\backend\cod2.c" />
     <ClCompile Include="..\dmd\backend\cod3.c" />
     <ClCompile Include="..\dmd\backend\cod4.c" />
+    <ClCompile Include="..\dmd\backend\cod5.c" />
     <ClCompile Include="..\dmd\backend\code.c" />
     <ClCompile Include="..\dmd\backend\debug.c" />
     <ClCompile Include="..\dmd\backend\dt.c" />
     <ClCompile Include="..\dmd\backend\dwarf.c" />
+    <ClCompile Include="..\dmd\backend\ee.c" />
     <ClCompile Include="..\dmd\backend\el.c" />
     <ClCompile Include="..\dmd\backend\elfobj.c" />
+    <ClCompile Include="..\dmd\backend\evalu8.c" />
     <ClCompile Include="..\dmd\backend\fp.c" />
+    <ClCompile Include="..\dmd\backend\gdag.c" />
+    <ClCompile Include="..\dmd\backend\gflow.c" />
+    <ClCompile Include="..\dmd\backend\glocal.c" />
+    <ClCompile Include="..\dmd\backend\gloop.c" />
+    <ClCompile Include="..\dmd\backend\go.c" />
+    <ClCompile Include="..\dmd\backend\gother.c" />
     <ClCompile Include="..\dmd\backend\machobj.c" />
     <ClCompile Include="..\dmd\backend\md5.c" />
     <ClCompile Include="..\dmd\backend\mscoffobj.c" />
@@ -133,7 +147,13 @@
     <ClCompile Include="..\dmd\tk\filespec.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
+    <ClCompile Include="..\dmd\tk\list.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="..\dmd\tk\mem.c">
+      <ExcludedFromBuild>true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="..\dmd\tk\vec.c">
       <ExcludedFromBuild>true</ExcludedFromBuild>
     </ClCompile>
     <ClCompile Include="..\dmd\root\newdelete.c" />
@@ -145,7 +165,7 @@ pushd $(IntDir)generated
 "%(Filename).exe"
 if errorlevel 1 exit /B %ERRORLEVEL%
 popd</Command>
-      <Outputs>$(IntDir)generated\optab.c;$(IntDir)generated\debtab.c;$(IntDir)generated\cdxxx.c;$(IntDir)generated\elxxx.d;$(IntDir)generated\tytab.c;$(IntDir)generated\\fltables.c;%(Outputs)</Outputs>
+      <Outputs>$(IntDir)generated\optab.c;$(IntDir)generated\debtab.c;$(IntDir)generated\cdxxx.c;$(IntDir)generated\elxxx.c;$(IntDir)generated\tytab.c;$(IntDir)generated\\fltables.c;%(Outputs)</Outputs>
       <AdditionalInputs>..\dmd\backend\cc.h;..\dmd\backend\oper.h;%(AdditionalInputs)</AdditionalInputs>
     </CustomBuild>
   </ItemGroup>

@@ -4,12 +4,12 @@ extern(C) int printf(const char*, ...);
 
 /************************************************/
 
-int[string] a;
+int a[string];
 
 size_t foo(immutable char [3] s)
 {
     printf("foo()\n");
-    int[string] b;
+    int b[string];
     string[] key;
     int[] value;
     printf("foo() 2\n");
@@ -22,7 +22,7 @@ size_t foo(immutable char [3] s)
 
 void foo2()
 {
-    int[string] c;
+    int c[string];
     string[] key;
     int[] value;
     int i;

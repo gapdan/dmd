@@ -28,7 +28,6 @@ import dmd.declaration;
 import dmd.denum;
 import dmd.dimport;
 import dmd.dinterpret;
-import dmd.dmangle;
 import dmd.dmodule;
 import dmd.dscope;
 import dmd.dstruct;
@@ -1371,7 +1370,9 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
         bool loadErrored = false;
         if (!imp.mod)
         {
-            loadErrored = imp.load(sc);
+            const errors = global.errors;
+            imp.load(sc);
+            loadErrored = global.errors != errors;
             if (imp.mod)
                 imp.mod.importAll(null);
         }
@@ -1745,7 +1746,7 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
                     dchar c = p[i];
                     if (c < 0x80)
                     {
-                        if (c.isValidMangling)
+                        if (c >= 'A' && c <= 'Z' || c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c != 0 && strchr("$%().:?@[]_", c))
                         {
                             ++i;
                             continue;
@@ -2170,7 +2171,6 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
             return errorReturn();
         }
         assert(em.ed);
-
         em.ed.dsymbolSemantic(sc);
         if (em.ed.errors)
             return errorReturn();
@@ -2186,16 +2186,8 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
 
         em.protection = em.ed.isAnonymous() ? em.ed.protection : Prot(Prot.Kind.public_);
         em.linkage = LINK.d;
-        em.storage_class |= STC.manifest;
-
-        // https://issues.dlang.org/show_bug.cgi?id=9701
-        if (em.ed.isAnonymous())
-        {
-            if (em.userAttribDecl)
-                em.userAttribDecl.userAttribDecl = em.ed.userAttribDecl;
-            else
-                em.userAttribDecl = em.ed.userAttribDecl;
-        }
+        em.storage_class = STC.manifest;
+        em.userAttribDecl = em.ed.isAnonymous() ? em.ed.userAttribDecl : null;
 
         // The first enum member is special
         bool first = (em == (*em.ed.members)[0]);
@@ -3582,14 +3574,6 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
             genCmain(sc);
 
         assert(funcdecl.type.ty != Terror || funcdecl.errors);
-
-        // semantic for parameters' UDAs
-        foreach (i; 0 .. Parameter.dim(f.parameters))
-        {
-            Parameter param = Parameter.getNth(f.parameters, i);
-            if (param && param.userAttribDecl)
-                param.userAttribDecl.dsymbolSemantic(sc);
-        }
     }
 
      /// Do the semantic analysis on the external interface to the function.
@@ -3751,29 +3735,7 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
         if (dd.ident == Id.dtor && dd.semanticRun < PASS.semantic)
             ad.dtors.push(dd);
         if (!dd.type)
-        {
             dd.type = new TypeFunction(null, Type.tvoid, false, LINK.d, dd.storage_class);
-            if (ad.classKind == ClassKind.cpp && dd.ident == Id.dtor)
-            {
-                if (auto cldec = ad.isClassDeclaration())
-                {
-                    assert (cldec.cppDtorVtblIndex == -1); // double-call check already by dd.type
-                    if (cldec.baseClass && cldec.baseClass.cppDtorVtblIndex != -1)
-                    {
-                        // override the base virtual
-                        cldec.cppDtorVtblIndex = cldec.baseClass.cppDtorVtblIndex;
-                    }
-                    else if (!dd.isFinal())
-                    {
-                        // reserve the dtor slot for the destructor (which we'll create later)
-                        cldec.cppDtorVtblIndex = cast(int)cldec.vtbl.dim;
-                        cldec.vtbl.push(dd);
-                        if (Target.twoDtorInVtable)
-                            cldec.vtbl.push(dd); // deleting destructor uses a second slot
-                    }
-                }
-            }
-        }
 
         sc = sc.push();
         sc.stc &= ~STC.static_; // not a static destructor
@@ -4115,7 +4077,7 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
 
     override void visit(StructDeclaration sd)
     {
-        //printf("StructDeclaration::semantic(this=%p, '%s', sizeok = %d)\n", sd, sd.toPrettyChars(), sd.sizeok);
+        //printf("StructDeclaration::semantic(this=%p, '%s', sizeok = %d)\n", this, toPrettyChars(), sizeok);
 
         //static int count; if (++count == 20) assert(0);
 
@@ -4167,9 +4129,6 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
                 sd.error("structs, unions cannot be `abstract`");
 
             sd.userAttribDecl = sc.userAttribDecl;
-
-            if (sc.linkage == LINK.cpp)
-                sd.classKind = ClassKind.cpp;
         }
         else if (sd.symtab && !scx)
             return;
@@ -4265,7 +4224,6 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
         sd.ctor = sd.searchCtor();
 
         sd.dtor = buildDtor(sd, sc2);
-        sd.tidtor = buildExternDDtor(sd, sc2);
         sd.postblit = buildPostBlit(sd, sc2);
 
         buildOpAssign(sd, sc2);
@@ -4282,7 +4240,7 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
 
         Module.dprogress++;
         sd.semanticRun = PASS.semanticdone;
-        //printf("-StructDeclaration::semantic(this=%p, '%s')\n", sd, sd.toChars());
+        //printf("-StructDeclaration::semantic(this=%p, '%s')\n", this, toChars());
 
         sc2.pop();
 
@@ -4307,18 +4265,6 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
             }
         }
 
-        if (sd.type.ty == Tstruct && (cast(TypeStruct)sd.type).sym != sd)
-        {
-            // https://issues.dlang.org/show_bug.cgi?id=19024
-            StructDeclaration sym = (cast(TypeStruct)sd.type).sym;
-            version (none)
-            {
-                printf("this = %p %s\n", sd, sd.toChars());
-                printf("type = %d sym = %p, %s\n", sd.type.ty, sym, sym.toPrettyChars());
-            }
-            sd.error("already exists at %s. Perhaps in another function with the same name?", sym.loc.toChars());
-        }
-
         if (global.errors != errors)
         {
             // The type is no good.
@@ -4333,6 +4279,16 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
             sd.deferred.semantic2(sc);
             sd.deferred.semantic3(sc);
         }
+
+        version (none)
+        {
+            if (sd.type.ty == Tstruct && (cast(TypeStruct)sd.type).sym != sd)
+            {
+                printf("this = %p %s\n", sd, sd.toChars());
+                printf("type = %d sym = %p\n", sd.type.ty, (cast(TypeStruct)sd.type).sym);
+            }
+        }
+        assert(sd.type.ty != Tstruct || (cast(TypeStruct)sd.type).sym == sd);
     }
 
     final void interfaceSemantic(ClassDeclaration cd)
@@ -4621,7 +4577,7 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
             cldec.baseok = Baseok.done;
 
             // If no base class, and this is not an Object, use Object as base class
-            if (!cldec.baseClass && cldec.ident != Id.Object && cldec.object && cldec.classKind == ClassKind.d)
+            if (!cldec.baseClass && cldec.ident != Id.Object && cldec.object && !cldec.classKind == ClassKind.cpp)
             {
                 void badObjectDotD()
                 {
@@ -4894,21 +4850,6 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
         }
 
         cldec.dtor = buildDtor(cldec, sc2);
-        cldec.tidtor = buildExternDDtor(cldec, sc2);
-
-        if (cldec.classKind == ClassKind.cpp && cldec.cppDtorVtblIndex != -1)
-        {
-            // now we've built the aggregate destructor, we'll make it virtual and assign it to the reserved vtable slot
-            cldec.dtor.vtblIndex = cldec.cppDtorVtblIndex;
-            cldec.vtbl[cldec.cppDtorVtblIndex] = cldec.dtor;
-
-            if (Target.twoDtorInVtable)
-            {
-                // TODO: create a C++ compatible deleting destructor (call out to `operator delete`)
-                //       for the moment, we'll call the non-deleting destructor and leak
-                cldec.vtbl[cldec.cppDtorVtblIndex + 1] = cldec.dtor;
-            }
-        }
 
         if (auto f = hasIdentityOpAssign(cldec, sc2))
         {
@@ -5303,7 +5244,7 @@ private extern(C++) final class DsymbolSemanticVisitor : Visitor
 
 void templateInstanceSemantic(TemplateInstance tempinst, Scope* sc, Expressions* fargs)
 {
-    //printf("[%s] TemplateInstance.dsymbolSemantic('%s', this=%p, gag = %d, sc = %p)\n", tempinst.loc.toChars(), tempinst.toChars(), tempinst, global.gag, sc);
+    //printf("[%s] TemplateInstance.dsymbolSemantic('%s', this=%p, gag = %d, sc = %p)\n", loc.toChars(), toChars(), this, global.gag, sc);
     version (none)
     {
         for (Dsymbol s = tempinst; s; s = s.parent)
@@ -5856,7 +5797,7 @@ Laftersemantic:
 // function used to perform semantic on AliasDeclaration
 void aliasSemantic(AliasDeclaration ds, Scope* sc)
 {
-    //printf("AliasDeclaration::semantic() %s\n", ds.toChars());
+    //printf("AliasDeclaration::semantic() %s\n", toChars());
     if (ds.aliassym)
     {
         auto fd = ds.aliassym.isFuncLiteralDeclaration();

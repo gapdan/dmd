@@ -361,7 +361,23 @@ private int tryMain(size_t argc, const(char)** argv)
     global.params.cpu = setTargetCPU(global.params.cpu);
     if (global.params.is64bit != is64bit)
         error(Loc.initial, "the architecture must not be changed in the %s section of %s", envsection.ptr, global.inifilename);
-
+    if (global.params.enforcePropertySyntax)
+    {
+        /*NOTE: -property used to disallow calling non-properties
+         without parentheses. This behaviour has fallen from grace.
+         Phobos dropped support for it while dmd still recognized it, so
+         that the switch has effectively not been supported. Time to
+         remove it from dmd.
+         Step 1 (2.069): Deprecate -property and ignore it. */
+        Loc loc;
+        deprecation(loc, "The -property switch is deprecated and has no " ~
+            "effect anymore.");
+        /* Step 2: Remove -property. Throw an error when it's set.
+         Do this by removing global.params.enforcePropertySyntax and the code
+         above that sets it. Let it be handled as an unrecognized switch.
+         Step 3: Possibly reintroduce -property with different semantics.
+         Any new semantics need to be decided on first. */
+    }
     // Target uses 64bit pointers.
     global.params.isLP64 = global.params.is64bit;
     if (global.errors)
@@ -372,7 +388,8 @@ private int tryMain(size_t argc, const(char)** argv)
     {
         if (global.params.jsonFieldFlags)
         {
-            generateJson(null);
+            Array!Module emptyModule;
+            generateJson(emptyModule);
             return EXIT_SUCCESS;
         }
         usage();
@@ -863,11 +880,6 @@ private int tryMain(size_t argc, const(char)** argv)
     Library library = null;
     if (global.params.lib)
     {
-        if (global.params.objfiles.dim == 0)
-        {
-            error(Loc.initial, "no input files");
-            return EXIT_FAILURE;
-        }
         library = Library.factory();
         library.setFilename(global.params.objdir, global.params.libname);
         // Add input object and input library files to output library
@@ -880,7 +892,7 @@ private int tryMain(size_t argc, const(char)** argv)
     // Generate output files
     if (global.params.doJsonGeneration)
     {
-        generateJson(&modules);
+        generateJson(modules);
     }
     if (!global.errors && global.params.doDocComments)
     {
@@ -986,7 +998,7 @@ private int tryMain(size_t argc, const(char)** argv)
     return status;
 }
 
-private void generateJson(Modules* modules)
+private void generateJson(ref Modules modules)
 {
     OutBuffer buf;
     json_generate(&buf, modules);
@@ -1396,7 +1408,7 @@ private void printPredefinedVersions(FILE* stream)
             buf.writeByte(' ');
             buf.writestring(str.toChars());
         }
-        stream.fprintf("predefs  %s\n", buf.peekString());
+        stream.fprintf("predefs  %s", buf.peekString());
     }
 }
 
@@ -1964,6 +1976,8 @@ private bool parseCommandLine(const ref Strings arguments, const size_t argc, re
             }
             else if (arg == "-ignore")      // https://dlang.org/dmd.html#switch-ignore
                 params.ignoreUnsupportedPragmas = true;
+            else if (arg == "-property")
+                params.enforcePropertySyntax = true;
             else if (arg == "-inline")      // https://dlang.org/dmd.html#switch-inline
             {
                 params.useInline = true;

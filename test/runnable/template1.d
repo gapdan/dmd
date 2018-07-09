@@ -1620,7 +1620,7 @@ void test67()
 /******************************************/
 
 template T68(int a) {
-    int[a] vec;
+    int vec[a];
 }
 
 void test68()

@@ -48,13 +48,14 @@ import dmd.toir;
 import dmd.tokens;
 import dmd.visitor;
 
+import dmd.tk.dlist;
+
 import dmd.backend.cc;
 import dmd.backend.cdef;
 import dmd.backend.cgcv;
 import dmd.backend.code;
 import dmd.backend.code_x86;
 import dmd.backend.cv4;
-import dmd.backend.dlist;
 import dmd.backend.dt;
 import dmd.backend.el;
 import dmd.backend.global;
@@ -718,7 +719,7 @@ private extern (C++) class S2irVisitor : Visitor
             assert(func.type.ty == Tfunction);
             TypeFunction tf = cast(TypeFunction)(func.type);
 
-            RET retmethod = retStyle(tf, func.needThis());
+            RET retmethod = retStyle(tf);
             if (retmethod == RET.stack)
             {
                 elem *es;
@@ -744,7 +745,7 @@ private extern (C++) class S2irVisitor : Visitor
                         Type t = ce.e1.type.toBasetype();
                         if (t.ty == Tdelegate)
                             t = t.nextOf();
-                        if (t.ty == Tfunction && retStyle(cast(TypeFunction)t, ce.f && ce.f.needThis()) == RET.stack)
+                        if (t.ty == Tfunction && retStyle(cast(TypeFunction)t) == RET.stack)
                         {
                             irs.ehidden = el_var(irs.shidden);
                             e = toElemDtor(s.exp, irs);
@@ -768,7 +769,7 @@ private extern (C++) class S2irVisitor : Visitor
                         Type t = ce.e1.type.toBasetype();
                         if (t.ty == Tdelegate)
                             t = t.nextOf();
-                        if (t.ty == Tfunction && retStyle(cast(TypeFunction)t, fd && fd.needThis()) == RET.stack)
+                        if (t.ty == Tfunction && retStyle(cast(TypeFunction)t) == RET.stack)
                         {
                             irs.ehidden = el_var(irs.shidden);
                             e = toElemDtor(s.exp, irs);
@@ -1640,7 +1641,7 @@ void insertFinallyBlockCalls(block *startblock)
     {
         printf("------- before ----------\n");
         numberBlocks(startblock);
-        foreach (b; BlockRange(startblock)) WRblock(b);
+        for (block *b = startblock; b; b = b.Bnext) WRblock(b);
         printf("-------------------------\n");
     }
 
@@ -1790,7 +1791,7 @@ void insertFinallyBlockCalls(block *startblock)
     {
         printf("------- after ----------\n");
         numberBlocks(startblock);
-        foreach (b; BlockRange(startblock)) WRblock(b);
+        for (block *b = startblock; b; b = b.Bnext) WRblock(b);
         printf("-------------------------\n");
     }
 }
@@ -1818,7 +1819,7 @@ void insertFinallyBlockGotos(block *startblock)
      * Actually, just make them into no-ops and let the optimizer
      * delete them.
      */
-    foreach (b; BlockRange(startblock))
+    for (block *b = startblock; b; b = b.Bnext)
     {
         b.Btry = null;
         switch (b.BC)
@@ -1851,7 +1852,7 @@ void insertFinallyBlockGotos(block *startblock)
     {
         printf("------- after ----------\n");
         numberBlocks(startblock);
-        foreach (b; BlockRange(startblock)) WRblock(b);
+        for (block *b = startblock; b; b = b.Bnext) WRblock(b);
         printf("-------------------------\n");
     }
 }

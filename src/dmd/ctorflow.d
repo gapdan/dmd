@@ -17,25 +17,19 @@ module dmd.ctorflow;
 import core.stdc.stdio;
 
 import dmd.root.rmem;
-import dmd.globals : Loc;
 
 enum CSX : ushort
 {
     none            = 0,
     this_ctor       = 0x01,     /// called this()
     super_ctor      = 0x02,     /// called super()
-    label           = 0x04,     /// seen a label
-    return_         = 0x08,     /// seen a return statement
-    any_ctor        = 0x10,     /// either this() or super() was called
-    halt            = 0x20,     /// assert(0)
-    deprecate_18719 = 0x40,    // issue deprecation for Issue 18719 - delete when deprecation period is over
-}
-
-/// Individual field in the Ctor with information about its callees and location.
-struct FieldInit
-{
-    CSX csx; /// information about the field's callees
-    Loc loc; /// location of the field initialization
+    this_           = 0x04,     /// referenced this
+    super_          = 0x08,     /// referenced super
+    label           = 0x10,     /// seen a label
+    return_         = 0x20,     /// seen a return statement
+    any_ctor        = 0x40,     /// either this() or super() was called
+    halt            = 0x80,     /// assert(0)
+    deprecate_18719 = 0x100,    // issue deprecation for Issue 18719 - delete when deprecation period is over
 }
 
 /***********
@@ -45,19 +39,30 @@ struct CtorFlow
 {
     CSX callSuper;      /// state of calling other constructors
 
-    FieldInit[] fieldinit;    /// state of field initializations
+    CSX[] fieldinit;    /// state of field initializations
 
     void allocFieldinit(size_t dim)
     {
-        fieldinit = (cast(FieldInit*)mem.xcalloc(FieldInit.sizeof, dim))[0 .. dim];
+        fieldinit = (cast(CSX*)mem.xcalloc(CSX.sizeof, dim))[0 .. dim];
     }
 
     void freeFieldinit()
     {
         if (fieldinit.ptr)
             mem.xfree(fieldinit.ptr);
-
         fieldinit = null;
+    }
+
+    CSX[] saveFieldInit()
+    {
+        CSX[] fi = null;
+        if (fieldinit.length) // copy
+        {
+            const dim = fieldinit.length;
+            fi = (cast(CSX*)mem.xmalloc(CSX.sizeof * dim))[0 .. dim];
+            fi[] = fieldinit[];
+        }
+        return fi;
     }
 
     /***********************
@@ -67,7 +72,7 @@ struct CtorFlow
      */
     CtorFlow clone()
     {
-        return CtorFlow(callSuper, fieldinit.arraydup);
+        return CtorFlow(callSuper, saveFieldInit());
     }
 
     /**********************************
@@ -79,7 +84,7 @@ struct CtorFlow
     {
         callSuper |= csx;
         foreach (ref u; fieldinit)
-            u.csx |= csx;
+            u |= csx;
     }
 
     /******************************
@@ -94,12 +99,7 @@ struct CtorFlow
         {
             assert(fieldinit.length == ctorflow.fieldinit.length);
             foreach (i, u; ctorflow.fieldinit)
-            {
-                auto fi = &fieldinit[i];
-                fi.csx |= u.csx;
-                if (fi.loc == Loc.init)
-                    fi.loc = u.loc;
-            }
+                fieldinit[i] |= u;
         }
     }
 }

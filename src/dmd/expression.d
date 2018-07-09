@@ -2299,16 +2299,12 @@ extern (C++) abstract class Expression : RootObject
 
         if (!f.isSafe() && !f.isTrusted())
         {
-            if (sc.flags & SCOPE.compile ? sc.func.isSafeBypassingInference() : sc.func.setUnsafe() && !(sc.flags & SCOPE.debug_))
+            if (sc.flags & SCOPE.compile ? sc.func.isSafeBypassingInference() : sc.func.setUnsafe())
             {
                 if (!loc.isValid()) // e.g. implicitly generated dtor
                     loc = sc.func.loc;
-
-                const prettyChars = f.toPrettyChars();
                 error("`@safe` %s `%s` cannot call `@system` %s `%s`",
-                    sc.func.kind(), sc.func.toPrettyChars(), f.kind(),
-                    prettyChars);
-                errorSupplemental(f.loc, "`%s` is declared here", prettyChars);
+                    sc.func.kind(), sc.func.toPrettyChars(), f.kind(), f.toPrettyChars());
                 return true;
             }
         }
@@ -4295,11 +4291,6 @@ extern (C++) final class SymOffExp : SymbolExp
  */
 extern (C++) final class VarExp : SymbolExp
 {
-    /**
-    * Semantic can be called multiple times for a single expression.
-    * This field is needed to ensure the deprecation message will be printed only once.
-    */
-    bool hasCheckedAttrs;
     extern (D) this(const ref Loc loc, Declaration var, bool hasOverloads = true)
     {
         if (var.isVarDeclaration())
@@ -4309,7 +4300,6 @@ extern (C++) final class VarExp : SymbolExp
         //printf("VarExp(this = %p, '%s', loc = %s)\n", this, var.toChars(), loc.toChars());
         //if (strcmp(var.ident.toChars(), "func") == 0) assert(0);
         this.type = var.type;
-        this.hasCheckedAttrs = false;
     }
 
     static VarExp create(Loc loc, Declaration var, bool hasOverloads = true)
@@ -4388,13 +4378,6 @@ extern (C++) final class VarExp : SymbolExp
     override void accept(Visitor v)
     {
         v.visit(this);
-    }
-
-    override Expression syntaxCopy()
-    {
-        auto ret = super.syntaxCopy();
-        (cast(VarExp)ret).hasCheckedAttrs = this.hasCheckedAttrs;
-        return ret;
     }
 }
 
@@ -5442,7 +5425,7 @@ extern (C++) final class DotVarExp : UnaExp
                     {
                         if (f == vd)
                         {
-                            if (!(sc.ctorflow.fieldinit[i].csx & CSX.this_ctor))
+                            if (!(sc.ctorflow.fieldinit[i] & CSX.this_ctor))
                             {
                                 /* If the address of vd is taken, assume it is thereby initialized
                                  * https://issues.dlang.org/show_bug.cgi?id=15869
@@ -7451,7 +7434,7 @@ extern (C++) final class ObjcClassReferenceExp : Expression
 {
     ClassDeclaration classDeclaration;
 
-    extern (D) this(const ref Loc loc, ClassDeclaration classDeclaration)
+    extern (D) this(Loc loc, ClassDeclaration classDeclaration)
     {
         super(loc, TOK.objcClassReference,
             __traits(classInstanceSize, ObjcClassReferenceExp));

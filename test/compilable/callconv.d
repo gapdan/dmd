@@ -4,7 +4,7 @@ import core.stdc.stdarg;
 
 struct ABC
 {
-	int[4] x;
+	int x[4];
 }
 
 ABC abc;

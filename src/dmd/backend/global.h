@@ -483,7 +483,7 @@ void rtlsym_reset();
 void rtlsym_term();
 
 // compress.c
-extern "C" { char *id_compress(char *id, int idlen, size_t *plen); }
+char *id_compress(char *id, int idlen, size_t *plen);
 
 // Dwarf
 void dwarf_CFA_set_loc(size_t location);

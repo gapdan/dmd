@@ -1,4 +1,4 @@
-// PERMUTE_ARGS: -inline -O
+// PERMUTE_ARGS: -inline -O -property
 // REQUIRED_ARGS: -dip25
 
 // Test operator overloading

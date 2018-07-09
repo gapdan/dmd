@@ -36,7 +36,7 @@ extern (C++):
 
 void error(const(char)* filename, uint linnum, uint charnum, const(char)* format, ...);
 
-package(dmd) @property @nogc nothrow auto NPTRSIZE() { return _tysize[TYnptr]; }
+private @property @nogc nothrow auto NPTRSIZE() { return _tysize[TYnptr]; }
 
 /****************************
  * Generate and output scope table.
@@ -142,7 +142,7 @@ void except_fillInEHTable(Symbol *s)
     // First, calculate starting catch offset
     int guarddim = 0;                               // max dimension of guard[]
     int ndctors = 0;                                // number of ESCdctor's
-    foreach (b; BlockRange(startblock))
+    for (block *b = startblock; b; b = b.Bnext)
     {
         if (b.BC == BC_try && b.Bscope_index >= guarddim)
             guarddim = b.Bscope_index + 1;
@@ -167,7 +167,7 @@ void except_fillInEHTable(Symbol *s)
 
     // Generate guard[]
     int i = 0;
-    foreach (b; BlockRange(startblock))
+    for (block *b = startblock; b; b = b.Bnext)
     {
         //printf("b = %p, b.Btry = %p, b.offset = %x\n", b, b.Btry, b.Boffset);
         if (b.BC == BC_try)
@@ -245,7 +245,7 @@ void except_fillInEHTable(Symbol *s)
         int stackmax = STACKINC;
 
     int scopeindex = guarddim;
-    foreach (b; BlockRange(startblock))
+    for (block *b = startblock; b; b = b.Bnext)
     {
         /* Set up stack of scope indices
          */
@@ -346,7 +346,7 @@ void except_fillInEHTable(Symbol *s)
     }
 
     // Generate catch[]
-    foreach (b; BlockRange(startblock))
+    for (block *b = startblock; b; b = b.Bnext)
     {
         if (b.BC == BC_try && b.jcatchvar)         // if try-catch
         {

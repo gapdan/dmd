@@ -591,8 +591,12 @@ public:
             assert(slice.length);
             foreach (const char c; slice)
             {
-                assert(c.isValidMangling, "The mangled name '" ~ slice ~ "' " ~
-                    "contains an invalid character: " ~ c);
+                assert(c == '_' ||
+                       c == '@' ||
+                       c == '?' ||
+                       c == '$' ||
+                       isalnum(c) ||
+                       c & 0x80);
             }
         }
     }
@@ -1097,34 +1101,6 @@ public:
     }
 }
 
-/// Returns: `true` if the given character is a valid mangled character
-package bool isValidMangling(dchar c)
-{
-    return
-        c >= 'A' && c <= 'Z' ||
-        c >= 'a' && c <= 'z' ||
-        c >= '0' && c <= '9' ||
-        c != 0 && strchr("$%().:?@[]_", c);
-}
-
-// valid mangled characters
-unittest
-{
-    assert('a'.isValidMangling);
-    assert('B'.isValidMangling);
-    assert('2'.isValidMangling);
-    assert('@'.isValidMangling);
-    assert('_'.isValidMangling);
-}
-
-// invalid mangled characters
-unittest
-{
-    assert(!'-'.isValidMangling);
-    assert(!0.isValidMangling);
-    assert(!'/'.isValidMangling);
-    assert(!'\\'.isValidMangling);
-}
 
 /******************************************************************************
  * Returns exact mangled name of function.

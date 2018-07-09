@@ -7,11 +7,9 @@ import std.uni : asCapitalized;
 import std.json;
 import std.getopt;
 import std.file : readText;
-import std.path : dirName;
 import std.stdio;
 
 bool keepDeco = false;
-enum rootDir = __FILE_FULL_PATH__.dirName.dirName;
 
 void usage()
 {
@@ -190,8 +188,6 @@ void sanitizeSemantics(ref JSONValue[string] semantics)
 
 auto normalizeFile(string file)
 {
-    import std.path : buildNormalizedPath, relativePath;
-    file = file.buildNormalizedPath.relativePath(rootDir);
     version(Windows)
         return file.replace("\\", "/");
     return file;
