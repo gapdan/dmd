@@ -419,9 +419,7 @@ public:
         if (parameters)
         {
             foreach(ref Parameter p; *parameters)
-            //for (size_t i = 0; i < parameters.dim; i++)
             {
-              //  Parameter p = (*parameters)[i];
                 objectStart();
                 if (p.ident)
                     property("name", p.ident.toChars());
