@@ -547,7 +547,6 @@ private int tryMain(size_t argc, const(char)** argv)
         const(char)* p = files[i];
         p = FileName.name(p); // strip path
         const(char)* ext = FileName.ext(p);
-        char* newname;
         if (ext)
         {
             /* Deduce what to do with a file based on its extension
@@ -613,7 +612,7 @@ private int tryMain(size_t argc, const(char)** argv)
             {
                 ext--; // skip onto '.'
                 assert(*ext == '.');
-                newname = cast(char*)mem.xmalloc((ext - p) + 1);
+                char* newname = cast(char*)mem.xmalloc((ext - p) + 1);
                 memcpy(newname, p, ext - p);
                 newname[ext - p] = 0; // strip extension
                 name = newname;
@@ -634,7 +633,10 @@ private int tryMain(size_t argc, const(char)** argv)
         {
             name = p;
             if (!*name)
-                goto Linvalid;
+            {
+                error(Loc.initial, "invalid file name '%s'", files[i]);
+                fatal(); 
+            }
         }
         /* At this point, name is the D source file name stripped of
          * its path and extension.
@@ -2378,7 +2380,7 @@ private __gshared Array!MatcherNode matchNodes;
  */
 private void createMatchNodes()
 {
-    static size_t findSortedIndexToAddForDepth(size_t depth)
+    static size_t findSortedIndexToAddForDepth(const size_t depth)
     {
         size_t index = 0;
         while (index < matchNodes.dim)
@@ -2468,7 +2470,7 @@ unittest
  *  dst = the data structure to save the parsed module pattern to.
  *  depth = the depth of the module pattern previously retrieved from $(D parseModulePatternDepth).
  */
-private void parseModulePattern(const(char)* modulePattern, MatcherNode* dst, ushort depth)
+private void parseModulePattern(const(char)* modulePattern, MatcherNode* dst, const ushort depth)
 {
     bool isExclude = false;
     if (modulePattern[0] == '-')

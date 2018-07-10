@@ -77,7 +77,7 @@ private void writeFilename(OutBuffer* buf, const(char)* filename, size_t len)
      */
     for (size_t i = 0; i < len; i++)
     {
-        char c = filename[i];
+        const char c = filename[i];
         if (isalnum(c) || c == '_')
             continue;
         /* Need to quote
@@ -249,7 +249,7 @@ public int runLINK()
             }
             char* p = cmdbuf.peekString();
             const(char)* lnkfilename = null;
-            size_t plen = strlen(p);
+            const size_t plen = strlen(p);
             if (plen > 7000)
             {
                 lnkfilename = FileName.forceExt(global.params.exefile, "lnk");
@@ -341,7 +341,7 @@ public int runLINK()
             /* Eliminate unnecessary trailing commas    */
             while (1)
             {
-                size_t i = cmdbuf.offset;
+                const size_t i = cmdbuf.offset;
                 if (!i || cmdbuf.data[i - 1] != ',')
                     break;
                 cmdbuf.offset--;
@@ -375,9 +375,9 @@ public int runLINK()
                 cmdbuf.writestring(global.params.linkswitches[i]);
             }
             cmdbuf.writeByte(';');
-            char* p = cmdbuf.peekString();
+            const(char)* p = cmdbuf.peekString();
             const(char)* lnkfilename = null;
-            size_t plen = strlen(p);
+            const size_t plen = strlen(p);
             if (plen > 7000)
             {
                 lnkfilename = FileName.forceExt(global.params.exefile, "lnk");
@@ -415,7 +415,7 @@ public int runLINK()
         else
         {
             // Split CC command to support link driver arguments such as -fpie or -flto.
-            char *arg = strdup(cc);
+            char* arg = strdup(cc);
             const(char)* tok = strtok(arg, " ");
             while (tok)
             {
@@ -581,7 +581,7 @@ public int runLINK()
         for (size_t i = 0; i < global.params.libfiles.dim; i++)
         {
             const(char)* p = global.params.libfiles[i];
-            size_t plen = strlen(p);
+            const size_t plen = strlen(p);
             if (plen > 2 && p[plen - 2] == '.' && p[plen - 1] == 'a')
                 argv.push(p);
             else
@@ -614,7 +614,7 @@ public int runLINK()
          * passed with -l.
          */
         const(char)* libname = global.params.symdebug ? global.params.debuglibname : global.params.defaultlibname;
-        size_t slen = libname ? strlen(libname) : 0;
+        const size_t slen = libname ? strlen(libname) : 0;
         if (!global.params.betterC && slen)
         {
             char* buf = cast(char*)malloc(3 + slen + 1);
@@ -738,12 +738,12 @@ version (Windows)
     private int executecmd(const(char)* cmd, const(char)* args)
     {
         int status;
-        size_t len;
         if (global.params.verbose)
             message("%s %s", cmd, args);
         if (!global.params.mscoff)
         {
-            if ((len = strlen(args)) > 255)
+            const size_t len = strlen(args);
+            if (len > 255)
             {
                 char* q = cast(char*)alloca(8 + len + 1);
                 sprintf(q, "_CMDLINE=%s", args);
@@ -760,6 +760,7 @@ version (Windows)
         }
         // Normalize executable path separators
         // https://issues.dlang.org/show_bug.cgi?id=9330
+        int result;
         cmd = toWinPath(cmd);
         version (CRuntime_Microsoft)
         {
@@ -785,31 +786,31 @@ version (Windows)
                     WaitForSingleObject(procInf.hProcess, INFINITE);
                     DWORD returnCode;
                     GetExitCodeProcess(procInf.hProcess, &returnCode);
-                    status = returnCode;
+                    result = returnCode;
                     CloseHandle(procInf.hProcess);
                 }
                 else
                 {
-                    status = -1;
+                    result = -1;
                 }
             }
         }
         else
         {
-            status = executearg0(cmd, args);
-            if (status == -1)
+            result = executearg0(cmd, args);
+            if (result == -1)
             {
-                status = spawnlp(0, cmd, cmd, args, null);
+                result = spawnlp(0, cmd, cmd, args, null);
             }
         }
-        if (status)
+        if (result)
         {
-            if (status == -1)
+            if (result == -1)
                 error(Loc.initial, "can't run '%s', check PATH", cmd);
             else
-                error(Loc.initial, "linker exited with status %d", status);
+                error(Loc.initial, "linker exited with status %d", result);
         }
-        return status;
+        return result;
     }
 }
 
@@ -888,6 +889,7 @@ public int runProgram()
     {
         pid_t childpid;
         int status;
+        int result;
         childpid = fork();
         if (childpid == 0)
         {
@@ -904,15 +906,15 @@ public int runProgram()
         waitpid(childpid, &status, 0);
         if (WIFEXITED(status))
         {
-            status = WEXITSTATUS(status);
+            result = WEXITSTATUS(status);
             //printf("--- errorlevel %d\n", status);
         }
         else if (WIFSIGNALED(status))
         {
             error(Loc.initial, "program killed by signal %d", WTERMSIG(status));
-            status = 1;
+            result = 1;
         }
-        return status;
+        return result;
     }
     else
     {

@@ -120,10 +120,10 @@ public extern (C++) Expression ctfeInterpretForPragmaMsg(Expression e)
     }
     if (expsx)
     {
-        auto te = new TupleExp(e.loc, expsx);
-        expandTuples(te.exps);
-        te.type = new TypeTuple(te.exps);
-        return te;
+        auto result = new TupleExp(e.loc, expsx);
+        expandTuples(result.exps);
+        result.type = new TypeTuple(result.exps);
+        return result;
     }
     return e;
 }
