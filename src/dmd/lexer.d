@@ -147,7 +147,7 @@ unittest
      */
     string text = "int"; // We rely on the implicit null-terminator
     scope Lexer lex1 = new Lexer(null, text.ptr, 0, text.length, 0, 0);
-    const TOK tok;
+    TOK tok;
     tok = lex1.nextToken();
     //printf("tok == %s, %d, %d\n", Token::toChars(tok), tok, TOK.int32);
     assert(tok == TOK.int32);
